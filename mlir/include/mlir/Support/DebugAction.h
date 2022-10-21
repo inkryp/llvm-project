@@ -10,7 +10,7 @@
 // allows for external entities to control certain actions taken by the compiler
 // by registering handler functions. A debug action handler provides the
 // internal implementation for the various queries on a debug action, such as
-// whether it should execute or not.
+// whether it is going to execute or not.
 //
 //===----------------------------------------------------------------------===//
 
@@ -25,7 +25,6 @@
 #include "llvm/ADT/ArrayRef.h"
 #include "llvm/ADT/Sequence.h"
 #include "llvm/ADT/StringMap.h"
-#include "llvm/DebugInfo/PDB/PDBTypes.h"
 #include "llvm/Support/TypeName.h"
 #include "llvm/Support/raw_ostream.h"
 #include <functional>
@@ -91,7 +90,7 @@ public:
     /// This hook allows for controlling whether an action should execute or
     /// not. It should return failure if the handler could not process the
     /// action, passing it to the next registered handler.
-    virtual FailureOr<bool> shouldExecute(StringRef actionTag,
+    virtual FailureOr<bool> execute(StringRef actionTag,
                                           StringRef description) {
       return failure();
     }
@@ -131,13 +130,13 @@ public:
 #if !LLVM_ENABLE_ABI_BREAKING_CHECKS
     return true;
 #else
-    // Invoke the `shouldExecute` method on the provided handler.
-    auto shouldExecuteFn = [&](auto *handler, auto &&...handlerParams) {
-      return handler->shouldExecute(
+    // Invoke the `execute` method on the provided handler.
+    auto executeFn = [&](auto *handler, auto &&...handlerParams) {
+      return handler->execute(
           std::forward<decltype(handlerParams)>(handlerParams)...);
     };
     FailureOr<bool> result = dispatchToHandler<ActionType, bool>(
-        shouldExecuteFn, std::forward<Args>(args)...);
+        executeFn, std::forward<Args>(args)...);
     bool executed = (succeeded(result) && *result) || failed(result);
     if (executed) {
       transform();
@@ -223,7 +222,7 @@ public:
     /// not. `parameters` correspond to the set of values provided by the
     /// action as context. It should return failure if the handler could not
     /// process the action, passing it to the next registered handler.
-    virtual FailureOr<bool> shouldExecute(ParameterTs... parameters) {
+    virtual FailureOr<bool> execute(ParameterTs... parameters) {
       return failure();
     }
 
