@@ -23,6 +23,8 @@ struct CounterAction : public DebugAction<CounterAction> {
   static StringRef getDescription() { return "Test action for debug counters"; }
 };
 
+ActionResult noOp() { return { nullptr, false, success() }; }
+
 TEST(DebugCounterTest, CounterTest) {
   std::unique_ptr<DebugCounter> counter = std::make_unique<DebugCounter>();
   counter->addCounter(CounterAction::getTag(), /*countToSkip=*/1,
@@ -32,13 +34,13 @@ TEST(DebugCounterTest, CounterTest) {
   manager.registerActionHandler(std::move(counter));
 
   // The first execution is skipped.
-  EXPECT_FALSE(manager.shouldExecute<CounterAction>());
+  EXPECT_FALSE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
 
   // The counter stops after 3 successful executions.
-  EXPECT_TRUE(manager.shouldExecute<CounterAction>());
-  EXPECT_TRUE(manager.shouldExecute<CounterAction>());
-  EXPECT_TRUE(manager.shouldExecute<CounterAction>());
-  EXPECT_FALSE(manager.shouldExecute<CounterAction>());
+  EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
+  EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
+  EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
+  EXPECT_FALSE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
 }
 
 } // namespace
