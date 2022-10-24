@@ -50,8 +50,11 @@ struct SimpleBreakpointManager {
   void enableBreakpoint(SimpleBreakpoint* breakpoint) {
     breakpoints[breakpoint] = true;
   }
- void disableBreakpoint(SimpleBreakpoint* breakpoint) {
+  void disableBreakpoint(SimpleBreakpoint* breakpoint) {
     breakpoints[breakpoint] = false;
+  }
+  void deleteBreakpoint(SimpleBreakpoint* breakpoint) {
+    breakpoints.erase(breakpoint);
   }
   static SimpleBreakpointManager& getGlobalSbm() {
     static SimpleBreakpointManager* sbm = new SimpleBreakpointManager();
@@ -80,6 +83,9 @@ public:
   }
   void enableSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
     sbm.enableBreakpoint(breakpoint);
+  }
+  void deleteSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+    sbm.deleteBreakpoint(breakpoint);
   }
 
 private:
@@ -115,6 +121,10 @@ TEST(DebugExecutionContext, DebuggerTest) {
   EXPECT_EQ(dbg.getTimesMatched(), 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
+  EXPECT_EQ(dbg.getTimesMatched(), 2);
+
+  dbg.deleteSimpleBreakpoint(dbgBreakpoint);
+  EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(dbg.getTimesMatched(), 2);
 }
 
