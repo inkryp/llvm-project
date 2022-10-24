@@ -1,4 +1,4 @@
-//===- DebugClientTest.cpp - Debug Client initial behavior ----------------===//
+//=== DebugExecutionContext.cpp - Debug Execution Context initial behavior ===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -67,7 +67,10 @@ class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
   DebugExecutionContext() : sbm(sbm.getGlobalSbm()) {
   }
-  FailureOr<bool> execute(StringRef tag, StringRef desc) final {
+  FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                                  ArrayRef<StringRef> instanceTags,
+                                  llvm::function_ref<ActionResult()> transform,
+                                  StringRef tag, StringRef desc) final {
     llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
       return Callback();
