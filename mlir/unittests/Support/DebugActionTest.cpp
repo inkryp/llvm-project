@@ -42,9 +42,13 @@ TEST(DebugActionTest, GenericHandler) {
   // A generic handler that always executes the simple action, but not the
   // parametric action.
   struct GenericHandler : DebugActionManager::GenericHandler {
-    FailureOr<bool> execute(StringRef tag, StringRef desc) final {
+    FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform,
+                        StringRef tag, StringRef desc) final {
       if (tag == SimpleAction::getTag()) {
         EXPECT_EQ(desc, SimpleAction::getDescription());
+        transform();
         return true;
       }
 
@@ -64,7 +68,13 @@ TEST(DebugActionTest, ActionSpecificHandler) {
 
   // Handler that simply uses the input as the decider.
   struct ActionSpecificHandler : ParametricAction::Handler {
-    FailureOr<bool> execute(bool executeParam) final {
+    FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform,
+                        bool executeParam) final {
+      if (executeParam) {
+        transform();
+      }
       return executeParam;
     }
   };
@@ -82,7 +92,14 @@ TEST(DebugActionTest, DebugCounterHandler) {
 
   // Handler that uses the number of action executions as the decider.
   struct DebugCounterHandler : SimpleAction::Handler {
-    FailureOr<bool> execute() final { return numExecutions++ < 3; }
+    FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform) final {
+      if (numExecutions++ < 3) {
+        transform();
+      }
+      return numExecutions <= 3;
+    }
     unsigned numExecutions = 0;
   };
   manager.registerActionHandler<DebugCounterHandler>();

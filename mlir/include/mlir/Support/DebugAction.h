@@ -90,8 +90,10 @@ public:
     /// This hook allows for controlling whether an action should execute or
     /// not. It should return failure if the handler could not process the
     /// action, passing it to the next registered handler.
-    virtual FailureOr<bool> execute(StringRef actionTag,
-                                          StringRef description) {
+    virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                              ArrayRef<StringRef> instanceTags,
+                              llvm::function_ref<ActionResult()> transform,
+                              StringRef actionTag, StringRef description) {
       return failure();
     }
 
@@ -132,15 +134,18 @@ public:
 #else
     // Invoke the `execute` method on the provided handler.
     auto executeFn = [&](auto *handler, auto &&...handlerParams) {
-      return handler->execute(
+      return handler->execute(units, instanceTags, transform,
           std::forward<decltype(handlerParams)>(handlerParams)...);
     };
     FailureOr<bool> result = dispatchToHandler<ActionType, bool>(
         executeFn, std::forward<Args>(args)...);
-    bool executed = (succeeded(result) && *result) || failed(result);
-    if (executed) {
+    // Execute transformation if no handler was defined.
+    if (failed(result)) {
       transform();
     }
+    // Could only have been executed if was dispatched to handler and handler
+    // returned true, or if it was not dispatched to any handler.
+    bool executed = (succeeded(result) && *result) || failed(result);
 
     // Whether the action was executed or not
     return success(executed);
@@ -222,7 +227,10 @@ public:
     /// not. `parameters` correspond to the set of values provided by the
     /// action as context. It should return failure if the handler could not
     /// process the action, passing it to the next registered handler.
-    virtual FailureOr<bool> execute(ParameterTs... parameters) {
+    virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform,
+                        ParameterTs... parameters) {
       return failure();
     }
 
