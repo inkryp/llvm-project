@@ -62,25 +62,38 @@ void DebugCounter::addCounter(StringRef actionTag, int64_t countToSkip,
 }
 
 // Register a counter with the specified name.
-FailureOr<bool> DebugCounter::execute(StringRef tag,
-                                            StringRef description) {
+FailureOr<bool> DebugCounter::execute(ArrayRef<IRUnit> units,
+                                  ArrayRef<StringRef> instanceTags,
+                                  llvm::function_ref<ActionResult()> transform,
+                                  StringRef tag,
+                                  StringRef description) {
   auto counterIt = counters.find(tag);
-  if (counterIt == counters.end())
+  if (counterIt == counters.end()) {
+    transform();
     return true;
+  }
 
   ++counterIt->second.count;
 
   // We only execute while the `countToSkip` is not smaller than `count`, and
   // `countToStopAfter + countToSkip` is larger than `count`. Negative counters
   // always execute.
-  if (counterIt->second.countToSkip < 0)
+  if (counterIt->second.countToSkip < 0) {
+    transform();
     return true;
+  }
   if (counterIt->second.countToSkip >= counterIt->second.count)
     return false;
-  if (counterIt->second.countToStopAfter < 0)
+  if (counterIt->second.countToStopAfter < 0) {
+    transform();
     return true;
-  return counterIt->second.countToStopAfter + counterIt->second.countToSkip >=
-         counterIt->second.count;
+  }
+  bool shouldExecute = counterIt->second.countToStopAfter
+          + counterIt->second.countToSkip >= counterIt->second.count;
+  if (shouldExecute) {
+    transform();
+  }
+  return shouldExecute;
 }
 
 void DebugCounter::print(raw_ostream &os) const {

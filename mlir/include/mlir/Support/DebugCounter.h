@@ -38,7 +38,10 @@ public:
                   int64_t countToStopAfter);
 
   /// Register a counter with the specified name.
-  FailureOr<bool> execute(StringRef tag, StringRef description) final;
+  FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform,
+                        StringRef tag, StringRef description) final;
 
   /// Print the counters that have been registered with this instance to the
   /// provided output stream.
