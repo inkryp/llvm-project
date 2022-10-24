@@ -1,7 +1,7 @@
 add_mlir_unittest(MLIRSupportTests
   DebugActionTest.cpp
-  DebugClientTest.cpp
   DebugCounterTest.cpp
+  DebugExecutionContextTest.cpp
   IndentedOstreamTest.cpp
   MathExtrasTest.cpp
   StorageUniquerTest.cpp

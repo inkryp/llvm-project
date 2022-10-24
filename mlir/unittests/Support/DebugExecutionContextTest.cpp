@@ -8,7 +8,7 @@
 
 #include "mlir/Support/DebugAction.h"
 #include "gmock/gmock.h"
-#include <vector>
+#include "llvm/ADT/MapVector.h"
 
 using namespace mlir;
 
@@ -34,58 +34,52 @@ struct SimpleBreakpoint {
 };
 
 struct SimpleBreakpointManager {
-  llvm::Optional<SimpleBreakpoint> match(StringRef tag) {
-    for (SimpleBreakpoint sbp : breakpoints) {
-      if (sbp.enabled && (sbp.tag == tag)) {
-        return sbp;
+  llvm::Optional<SimpleBreakpoint*> match(StringRef &tag) {
+    for (auto &[breakpoint, status] : breakpoints) {
+      if (status && ((breakpoint->tag) == tag)) {
+        return breakpoint;
       }
     }
     return {};
   }
-  void addBreakpoint(StringRef tag) {
-    breakpoints.push_back(SimpleBreakpoint(tag));
+  SimpleBreakpoint* addBreakpoint(StringRef tag) {
+    auto breakpoint = new SimpleBreakpoint(tag);
+    breakpoints[breakpoint] = true;
+    return breakpoint;
   }
-  void enableBreakpoint(StringRef tag) {
-    for (SimpleBreakpoint &sbp : breakpoints) {
-      if (sbp.tag == tag) {
-         sbp.enabled = true;
-      }
-    }
+  void enableBreakpoint(SimpleBreakpoint* breakpoint) {
+    breakpoints[breakpoint] = true;
   }
-  void disableBreakpoint(StringRef tag) {
-    for (SimpleBreakpoint &sbp : breakpoints) {
-      if (sbp.tag == tag) {
-        sbp.enabled = false;
-      }
-    }
+ void disableBreakpoint(SimpleBreakpoint* breakpoint) {
+    breakpoints[breakpoint] = false;
   }
-  SimpleBreakpointManager& getGlobalSbm() {
+  static SimpleBreakpointManager& getGlobalSbm() {
     static SimpleBreakpointManager* sbm = new SimpleBreakpointManager();
     return *sbm;
   }
-  std::vector<SimpleBreakpoint> breakpoints;
+  llvm::MapVector<SimpleBreakpoint*, bool> breakpoints;
 };
 
-class DebugClient : public DebugActionManager::GenericHandler {
+class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugClient() : sbm(sbm.getGlobalSbm()) {
+  DebugExecutionContext() : sbm(sbm.getGlobalSbm()) {
   }
   FailureOr<bool> execute(StringRef tag, StringRef desc) final {
-    llvm::Optional<SimpleBreakpoint> breakpoint = sbm.match(tag);
+    llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
       return Callback();
     }
     return true;
   }
   int getTimesMatched() { return match; }
-  void addSimpleBreakpoint(StringRef tag) {
-    sbm.addBreakpoint(tag);
+  SimpleBreakpoint* addSimpleBreakpoint(StringRef tag) {
+    return sbm.addBreakpoint(tag);
   }
-  void disableSimpleBreakpoint(StringRef tag) {
-    sbm.disableBreakpoint(tag);
+  void disableSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+    sbm.disableBreakpoint(breakpoint);
   }
-  void enableSimpleBreakpoint(StringRef tag) {
-    sbm.enableBreakpoint(tag);
+  void enableSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+    sbm.enableBreakpoint(breakpoint);
   }
 
 private:
@@ -97,26 +91,26 @@ private:
   static int match;
 };
 
-int DebugClient::match = 0;
+int DebugExecutionContext::match = 0;
 
-TEST(DebugClientTest, DebuggerTest) {
+TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
-  manager.registerActionHandler<DebugClient>();
+  manager.registerActionHandler<DebugExecutionContext>();
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
 
-  DebugClient dbg;
+  DebugExecutionContext dbg;
   EXPECT_EQ(dbg.getTimesMatched(), 0);
 
-  dbg.addSimpleBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint = dbg.addSimpleBreakpoint(DebuggerAction::getTag());
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(dbg.getTimesMatched(), 1);
 
-  dbg.disableSimpleBreakpoint(DebuggerAction::getTag());
+  dbg.disableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(dbg.getTimesMatched(), 1);
 
-  dbg.enableSimpleBreakpoint(DebuggerAction::getTag());
+  dbg.enableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(dbg.getTimesMatched(), 2);
 
