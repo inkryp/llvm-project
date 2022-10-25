@@ -65,19 +65,18 @@ struct SimpleBreakpointManager {
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext() : sbm(sbm.getGlobalSbm()) {
-  }
+  DebugExecutionContext(llvm::function_ref<bool()> callback)
+      : OnBreakpoint(callback), sbm(sbm.getGlobalSbm()) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                                   ArrayRef<StringRef> instanceTags,
                                   llvm::function_ref<ActionResult()> transform,
                                   StringRef tag, StringRef desc) final {
     llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
-      return Callback();
+      return OnBreakpoint();
     }
     return true;
   }
-  int getTimesMatched() { return match; }
   SimpleBreakpoint* addSimpleBreakpoint(StringRef tag) {
     return sbm.addBreakpoint(tag);
   }
@@ -92,44 +91,43 @@ public:
   }
 
 private:
-  bool Callback() {
-    match++;
-    return false;
-  }
+  llvm::function_ref<bool()> OnBreakpoint;
   SimpleBreakpointManager& sbm;
-  static int match;
 };
-
-int DebugExecutionContext::match = 0;
 
 TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
-  auto ptr = std::make_unique<DebugExecutionContext>();
+  int match = 0;
+  auto callback = [&match](){
+    match++;
+    return false;
+  };
+  auto ptr = std::make_unique<DebugExecutionContext>(callback);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
 
-  EXPECT_EQ(dbg->getTimesMatched(), 0);
+  EXPECT_EQ(match, 0);
 
   auto dbgBreakpoint = dbg->addSimpleBreakpoint(DebuggerAction::getTag());
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg->getTimesMatched(), 1);
+  EXPECT_EQ(match, 1);
 
   dbg->disableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg->getTimesMatched(), 1);
+  EXPECT_EQ(match, 1);
 
   dbg->enableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg->getTimesMatched(), 2);
+  EXPECT_EQ(match, 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg->getTimesMatched(), 2);
+  EXPECT_EQ(match, 2);
 
   dbg->deleteSimpleBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg->getTimesMatched(), 2);
+  EXPECT_EQ(match, 2);
 }
 
 } // namespace
