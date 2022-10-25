@@ -82,9 +82,20 @@ public:
                                   StringRef tag, StringRef desc) final {
     llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
-      OnBreakpoint();
-      return false;
+      auto todoNext = OnBreakpoint();
+      switch (todoNext) {
+        case DebugExecutionControl::Apply:
+          transform();
+          return true;
+        case DebugExecutionControl::Skip:
+          return false;
+        // TODO: Support the other DebugExecutionControl
+        // Implement finate state machine that represent debugger flow
+        default:
+          return false;
+      }
     }
+    transform();
     return true;
   }
   SimpleBreakpoint* addSimpleBreakpoint(StringRef tag) {
@@ -110,7 +121,7 @@ TEST(DebugExecutionContext, DebuggerTest) {
   int match = 0;
   auto callback = [&match](){
     match++;
-    return DebugExecutionControl::Apply;
+    return DebugExecutionControl::Skip;
   };
   auto ptr = std::make_unique<DebugExecutionContext>(callback);
   auto dbg = ptr.get();
@@ -121,7 +132,7 @@ TEST(DebugExecutionContext, DebuggerTest) {
   EXPECT_EQ(match, 0);
 
   auto dbgBreakpoint = dbg->addSimpleBreakpoint(DebuggerAction::getTag());
-  EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 1);
 
   dbg->disableSimpleBreakpoint(dbgBreakpoint);
@@ -129,7 +140,7 @@ TEST(DebugExecutionContext, DebuggerTest) {
   EXPECT_EQ(match, 1);
 
   dbg->enableSimpleBreakpoint(dbgBreakpoint);
-  EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
