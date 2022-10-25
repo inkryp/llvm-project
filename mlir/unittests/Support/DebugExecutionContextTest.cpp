@@ -64,9 +64,17 @@ struct SimpleBreakpointManager {
   llvm::StringMap<std::unique_ptr<SimpleBreakpoint>> breakpoints;
 };
 
+enum DebugExecutionControl {
+  Apply = 1,
+  Skip = 2,
+  Step = 3,
+  Next = 4,
+  VirtualRun = 5
+};
+
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext(llvm::function_ref<bool()> callback)
+  DebugExecutionContext(llvm::function_ref<DebugExecutionControl()> callback)
       : OnBreakpoint(callback), sbm(sbm.getGlobalSbm()) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                                   ArrayRef<StringRef> instanceTags,
@@ -74,7 +82,8 @@ public:
                                   StringRef tag, StringRef desc) final {
     llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
-      return OnBreakpoint();
+      OnBreakpoint();
+      return false;
     }
     return true;
   }
@@ -92,7 +101,7 @@ public:
   }
 
 private:
-  llvm::function_ref<bool()> OnBreakpoint;
+  llvm::function_ref<DebugExecutionControl()> OnBreakpoint;
   SimpleBreakpointManager& sbm;
 };
 
@@ -101,7 +110,7 @@ TEST(DebugExecutionContext, DebuggerTest) {
   int match = 0;
   auto callback = [&match](){
     match++;
-    return false;
+    return DebugExecutionControl::Apply;
   };
   auto ptr = std::make_unique<DebugExecutionContext>(callback);
   auto dbg = ptr.get();
