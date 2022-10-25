@@ -1,4 +1,4 @@
-//=== DebugExecutionContext.cpp - Debug Execution Context initial behavior ===//
+//===- DebugExecutionContextTest.cpp - Debug Execution Context first impl -===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -28,39 +28,39 @@ struct OtherAction : public DebugAction<> {
 ActionResult noOp() { return { nullptr, false, success() }; }
 
 struct SimpleBreakpoint {
-  StringRef tag;
+  std::string tag;
   bool enabled;
-  SimpleBreakpoint(StringRef &_tag) : tag(_tag), enabled(true) {}
+  SimpleBreakpoint(const std::string &_tag) : tag(_tag), enabled(true) {}
 };
 
 struct SimpleBreakpointManager {
   llvm::Optional<SimpleBreakpoint*> match(StringRef &tag) {
-    for (auto &[breakpoint, status] : breakpoints) {
-      if (status && ((breakpoint->tag) == tag)) {
-        return breakpoint;
-      }
+    auto it = breakpoints.find(tag);
+    if (it != breakpoints.end() && it->second->enabled) {
+      return it->second.get();
     }
     return {};
   }
   SimpleBreakpoint* addBreakpoint(StringRef tag) {
-    auto breakpoint = new SimpleBreakpoint(tag);
-    breakpoints[breakpoint] = true;
-    return breakpoint;
+    // TODO: Avoid doing two lookups by using insert()
+    // Insert nullptr and only if it gets inserted do the make_unique and overwrite it
+    breakpoints[tag] = std::make_unique<SimpleBreakpoint>(tag.str());
+    return breakpoints[tag].get();
   }
   void enableBreakpoint(SimpleBreakpoint* breakpoint) {
-    breakpoints[breakpoint] = true;
+    breakpoint->enabled = true;
   }
   void disableBreakpoint(SimpleBreakpoint* breakpoint) {
-    breakpoints[breakpoint] = false;
+    breakpoint->enabled = false;
   }
   void deleteBreakpoint(SimpleBreakpoint* breakpoint) {
-    breakpoints.erase(breakpoint);
+    breakpoints.erase(breakpoint->tag);
   }
   static SimpleBreakpointManager& getGlobalSbm() {
     static SimpleBreakpointManager* sbm = new SimpleBreakpointManager();
     return *sbm;
   }
-  llvm::MapVector<SimpleBreakpoint*, bool> breakpoints;
+  llvm::StringMap<std::unique_ptr<SimpleBreakpoint>> breakpoints;
 };
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
@@ -104,31 +104,32 @@ int DebugExecutionContext::match = 0;
 
 TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
-  manager.registerActionHandler<DebugExecutionContext>();
+  auto ptr = std::make_unique<DebugExecutionContext>();
+  auto dbg = ptr.get();
+  manager.registerActionHandler(std::move(ptr));
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
 
-  DebugExecutionContext dbg;
-  EXPECT_EQ(dbg.getTimesMatched(), 0);
+  EXPECT_EQ(dbg->getTimesMatched(), 0);
 
-  auto dbgBreakpoint = dbg.addSimpleBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint = dbg->addSimpleBreakpoint(DebuggerAction::getTag());
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg.getTimesMatched(), 1);
+  EXPECT_EQ(dbg->getTimesMatched(), 1);
 
-  dbg.disableSimpleBreakpoint(dbgBreakpoint);
+  dbg->disableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg.getTimesMatched(), 1);
+  EXPECT_EQ(dbg->getTimesMatched(), 1);
 
-  dbg.enableSimpleBreakpoint(dbgBreakpoint);
+  dbg->enableSimpleBreakpoint(dbgBreakpoint);
   EXPECT_FALSE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg.getTimesMatched(), 2);
+  EXPECT_EQ(dbg->getTimesMatched(), 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg.getTimesMatched(), 2);
+  EXPECT_EQ(dbg->getTimesMatched(), 2);
 
-  dbg.deleteSimpleBreakpoint(dbgBreakpoint);
+  dbg->deleteSimpleBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
-  EXPECT_EQ(dbg.getTimesMatched(), 2);
+  EXPECT_EQ(dbg->getTimesMatched(), 2);
 }
 
 } // namespace
