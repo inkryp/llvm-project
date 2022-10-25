@@ -42,10 +42,11 @@ struct SimpleBreakpointManager {
     return {};
   }
   SimpleBreakpoint* addBreakpoint(StringRef tag) {
-    // TODO: Avoid doing two lookups by using insert()
-    // Insert nullptr and only if it gets inserted do the make_unique and overwrite it
-    breakpoints[tag] = std::make_unique<SimpleBreakpoint>(tag.str());
-    return breakpoints[tag].get();
+    auto result = breakpoints.insert({tag, nullptr});
+    assert(result.second);
+    auto &it = result.first;
+    it->second = std::make_unique<SimpleBreakpoint>(tag.str());
+    return it->second.get();
   }
   void enableBreakpoint(SimpleBreakpoint* breakpoint) {
     breakpoint->enabled = true;
