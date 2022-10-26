@@ -74,7 +74,9 @@ enum DebugExecutionControl {
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext(llvm::function_ref<DebugExecutionControl()> callback)
+  DebugExecutionContext(
+    llvm::function_ref<DebugExecutionControl(ArrayRef<IRUnit>,
+                          ArrayRef<StringRef>, StringRef, StringRef)> callback)
       : OnBreakpoint(callback), sbm(sbm.getGlobalSbm()) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                                   ArrayRef<StringRef> instanceTags,
@@ -82,7 +84,7 @@ public:
                                   StringRef tag, StringRef desc) final {
     llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
     if (breakpoint) {
-      auto todoNext = OnBreakpoint();
+      auto todoNext = OnBreakpoint(units, instanceTags, tag, desc);
       switch (todoNext) {
         case DebugExecutionControl::Apply:
           transform();
@@ -112,14 +114,16 @@ public:
   }
 
 private:
-  llvm::function_ref<DebugExecutionControl()> OnBreakpoint;
+  llvm::function_ref<DebugExecutionControl(ArrayRef<IRUnit>,
+    ArrayRef<StringRef>, StringRef, StringRef)> OnBreakpoint;
   SimpleBreakpointManager& sbm;
 };
 
 TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
   int match = 0;
-  auto callback = [&match](){
+  auto callback = [&match](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+      StringRef tag, StringRef desc){
     match++;
     return DebugExecutionControl::Skip;
   };
