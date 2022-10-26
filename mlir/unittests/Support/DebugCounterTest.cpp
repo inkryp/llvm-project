@@ -34,13 +34,13 @@ TEST(DebugCounterTest, CounterTest) {
   manager.registerActionHandler(std::move(counter));
 
   // The first execution is skipped.
-  EXPECT_FALSE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<CounterAction>({}, {}, noOp)));
 
   // The counter stops after 3 successful executions.
   EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
   EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
   EXPECT_TRUE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
-  EXPECT_FALSE(succeeded(manager.execute<CounterAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<CounterAction>({}, {}, noOp)));
 }
 
 } // namespace

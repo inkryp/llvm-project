@@ -16,11 +16,11 @@ using namespace mlir;
 #if LLVM_ENABLE_ABI_BREAKING_CHECKS
 
 namespace {
-struct DebuggerAction : public DebugAction<> {
+struct DebuggerAction : public DebugAction<DebuggerAction> {
   static StringRef getTag() { return "debugger-action"; }
   static StringRef getDescription() { return "Test action for debug client"; }
 };
-struct OtherAction : public DebugAction<> {
+struct OtherAction : public DebugAction<OtherAction> {
   static StringRef getTag() { return "other-action"; }
   static StringRef getDescription() { return "Test action for debug client"; }
 };

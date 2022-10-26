@@ -60,7 +60,7 @@ TEST(DebugActionTest, GenericHandler) {
   manager.registerActionHandler<GenericHandler>();
 
   EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
-  EXPECT_FALSE(succeeded(manager.execute<ParametricAction>({}, {}, noOp, true)));
+  EXPECT_TRUE(failed(manager.execute<ParametricAction>({}, {}, noOp, true)));
 }
 
 TEST(DebugActionTest, ActionSpecificHandler) {
@@ -81,7 +81,7 @@ TEST(DebugActionTest, ActionSpecificHandler) {
   manager.registerActionHandler<ActionSpecificHandler>();
 
   EXPECT_TRUE(succeeded(manager.execute<ParametricAction>({}, {}, noOp, true)));
-  EXPECT_FALSE(succeeded(manager.execute<ParametricAction>({}, {}, noOp, false)));
+  EXPECT_TRUE(failed(manager.execute<ParametricAction>({}, {}, noOp, false)));
 
   // There is no handler for the simple action, so it is always executed.
   EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
@@ -108,8 +108,8 @@ TEST(DebugActionTest, DebugCounterHandler) {
   EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
   EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
   EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
-  EXPECT_FALSE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
-  EXPECT_FALSE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<SimpleAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<SimpleAction>({}, {}, noOp)));
 }
 
 TEST(DebugActionTest, NonOverlappingActionSpecificHandlers) {
@@ -117,15 +117,23 @@ TEST(DebugActionTest, NonOverlappingActionSpecificHandlers) {
 
   // One handler returns true and another returns false
   struct SimpleActionHandler : SimpleAction::Handler {
-    FailureOr<bool> shouldExecute() final { return true; }
+    FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform) {
+      return true;
+    }
   };
   struct OtherSimpleActionHandler : OtherSimpleAction::Handler {
-    FailureOr<bool> shouldExecute() final { return false; }
+    FailureOr<bool> execute(ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        llvm::function_ref<ActionResult()> transform) {
+      return false;
+    }
   };
   manager.registerActionHandler<SimpleActionHandler>();
   manager.registerActionHandler<OtherSimpleActionHandler>();
-  EXPECT_TRUE(manager.shouldExecute<SimpleAction>());
-  EXPECT_FALSE(manager.shouldExecute<OtherSimpleAction>());
+  EXPECT_TRUE(succeeded(manager.execute<SimpleAction>({}, {}, noOp)));
+  EXPECT_TRUE(failed(manager.execute<OtherSimpleAction>({}, {}, noOp)));
 }
 
 } // namespace
