@@ -57,7 +57,7 @@ public:
 
 protected:
   DebugActionBase(TypeID actionID, StringRef tag, StringRef desc)
-    : tag(tag), desc(desc), actionID(actionID) {}
+      : tag(tag), desc(desc), actionID(actionID) {}
 
   /// The type of the derived action class. This allows for detecting the
   /// specific handler of a given action type.
@@ -112,10 +112,10 @@ public:
     /// This hook allows for controlling whether an action should execute or
     /// not. It should return failure if the handler could not process the
     /// action, passing it to the next registered handler.
-    virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                              ArrayRef<StringRef> instanceTags,
-                              llvm::function_ref<ActionResult()> transform,
-                              const DebugActionBase& action) {
+    virtual FailureOr<bool>
+    execute(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+            llvm::function_ref<ActionResult()> transform,
+            const DebugActionBase &action) {
       return failure();
     }
 
@@ -143,22 +143,21 @@ public:
 
   /// Find a handler to execute an action provided with `transform` and
   /// identified with `instanceTag` on the list of IRUnit `units`. The list of
-  /// extra `args` matches the expectation of `ActionType`. If no handler is found
-  /// the `transform` callback is invoked directly.
+  /// extra `args` matches the expectation of `ActionType`. If no handler is
+  /// found the `transform` callback is invoked directly.
   template <typename ActionType, typename... Args>
-  LogicalResult execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        Args &&... args) {
+  LogicalResult
+  execute(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+          llvm::function_ref<ActionResult()> transform, Args &&...args) {
     // The manager is always disabled if built without debug.
 #if !LLVM_ENABLE_ABI_BREAKING_CHECKS
     return true;
 #else
     // Invoke the `execute` method on the provided handler.
     auto executeFn = [&](auto *handler, auto &&...handlerParams) {
-      return handler->execute(units, instanceTags, transform,
-          ActionType(
-            std::forward<decltype(handlerParams)>(handlerParams)...));
+      return handler->execute(
+          units, instanceTags, transform,
+          ActionType(std::forward<decltype(handlerParams)>(handlerParams)...));
     };
     FailureOr<bool> result = dispatchToHandler<ActionType, bool>(
         executeFn, std::forward<Args>(args)...);
@@ -241,8 +240,9 @@ private:
 template <typename Derived, typename... ParameterTs>
 class DebugAction : public DebugActionBase {
 public:
-  DebugAction() : DebugActionBase(TypeID::get<Derived>(),
-    Derived::getTag(), Derived::getDescription()) {}
+  DebugAction()
+      : DebugActionBase(TypeID::get<Derived>(), Derived::getTag(),
+                        Derived::getDescription()) {}
 
   /// Provide classof to allow casting between action types.
   static bool classof(const DebugActionBase *action) {
@@ -257,10 +257,10 @@ public:
     /// not. `parameters` correspond to the set of values provided by the
     /// action as context. It should return failure if the handler could not
     /// process the action, passing it to the next registered handler.
-    virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const Derived& action) {
+    virtual FailureOr<bool>
+    execute(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+            llvm::function_ref<ActionResult()> transform,
+            const Derived &action) {
       return failure();
     }
 

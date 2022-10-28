@@ -23,7 +23,7 @@ struct CounterAction : public DebugAction<CounterAction> {
   static StringRef getDescription() { return "Test action for debug counters"; }
 };
 
-ActionResult noOp() { return { nullptr, false, success() }; }
+ActionResult noOp() { return {nullptr, false, success()}; }
 
 TEST(DebugCounterTest, CounterTest) {
   std::unique_ptr<DebugCounter> counter = std::make_unique<DebugCounter>();

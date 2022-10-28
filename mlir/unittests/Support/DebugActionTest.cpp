@@ -36,7 +36,7 @@ struct ParametricAction : DebugAction<ParametricAction, bool> {
   static StringRef getDescription() { return "param-action-description"; }
 };
 
-ActionResult noOp() { return { nullptr, false, success() }; }
+ActionResult noOp() { return {nullptr, false, success()}; }
 
 TEST(DebugActionTest, GenericHandler) {
   DebugActionManager manager;
@@ -45,17 +45,17 @@ TEST(DebugActionTest, GenericHandler) {
   // parametric action.
   struct GenericHandler : DebugActionManager::GenericHandler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const DebugActionBase& actionBase) final {
+                            ArrayRef<StringRef> instanceTags,
+                            llvm::function_ref<ActionResult()> transform,
+                            const DebugActionBase &actionBase) final {
       if (llvm::isa<SimpleAction>(actionBase)) {
-        const auto& action = llvm::cast<SimpleAction>(actionBase);
+        const auto &action = llvm::cast<SimpleAction>(actionBase);
         EXPECT_EQ(action.tag, SimpleAction::getTag());
         transform();
         return true;
       }
 
-      const auto& action = llvm::cast<ParametricAction>(actionBase);
+      const auto &action = llvm::cast<ParametricAction>(actionBase);
       EXPECT_EQ(action.tag, ParametricAction::getTag());
       EXPECT_EQ(action.desc, ParametricAction::getDescription());
       return false;
@@ -73,9 +73,9 @@ TEST(DebugActionTest, ActionSpecificHandler) {
   // Handler that simply uses the input as the decider.
   struct ActionSpecificHandler : ParametricAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const ParametricAction& action) final {
+                            ArrayRef<StringRef> instanceTags,
+                            llvm::function_ref<ActionResult()> transform,
+                            const ParametricAction &action) final {
       if (action.executeParam) {
         transform();
       }
@@ -97,9 +97,9 @@ TEST(DebugActionTest, DebugCounterHandler) {
   // Handler that uses the number of action executions as the decider.
   struct DebugCounterHandler : SimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const SimpleAction& action) final {
+                            ArrayRef<StringRef> instanceTags,
+                            llvm::function_ref<ActionResult()> transform,
+                            const SimpleAction &action) final {
       if (numExecutions++ < 3) {
         transform();
       }
@@ -123,17 +123,17 @@ TEST(DebugActionTest, NonOverlappingActionSpecificHandlers) {
   // One handler returns true and another returns false
   struct SimpleActionHandler : SimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const SimpleAction& action) final {
+                            ArrayRef<StringRef> instanceTags,
+                            llvm::function_ref<ActionResult()> transform,
+                            const SimpleAction &action) final {
       return true;
     }
   };
   struct OtherSimpleActionHandler : OtherSimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                        ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform,
-                        const OtherSimpleAction& action) final {
+                            ArrayRef<StringRef> instanceTags,
+                            llvm::function_ref<ActionResult()> transform,
+                            const OtherSimpleAction &action) final {
       return false;
     }
   };

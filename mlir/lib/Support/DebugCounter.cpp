@@ -62,10 +62,10 @@ void DebugCounter::addCounter(StringRef actionTag, int64_t countToSkip,
 }
 
 // Register a counter with the specified name.
-FailureOr<bool> DebugCounter::execute(ArrayRef<IRUnit> units,
-                                  ArrayRef<StringRef> instanceTags,
-                                  llvm::function_ref<ActionResult()> transform,
-                                  const DebugActionBase& actionBase) {
+FailureOr<bool>
+DebugCounter::execute(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+                      llvm::function_ref<ActionResult()> transform,
+                      const DebugActionBase &actionBase) {
   auto counterIt = counters.find(actionBase.tag);
   if (counterIt == counters.end()) {
     transform();
@@ -87,8 +87,9 @@ FailureOr<bool> DebugCounter::execute(ArrayRef<IRUnit> units,
     transform();
     return true;
   }
-  bool shouldExecute = counterIt->second.countToStopAfter
-          + counterIt->second.countToSkip >= counterIt->second.count;
+  bool shouldExecute =
+      counterIt->second.countToStopAfter + counterIt->second.countToSkip >=
+      counterIt->second.count;
   if (shouldExecute) {
     transform();
   }

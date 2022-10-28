@@ -7,8 +7,8 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/DebugAction.h"
-#include "gmock/gmock.h"
 #include "llvm/ADT/MapVector.h"
+#include "gmock/gmock.h"
 
 using namespace mlir;
 
@@ -25,7 +25,7 @@ struct OtherAction : public DebugAction<OtherAction> {
   static StringRef getDescription() { return "Test action for debug client"; }
 };
 
-ActionResult noOp() { return { nullptr, false, success() }; }
+ActionResult noOp() { return {nullptr, false, success()}; }
 
 struct SimpleBreakpoint {
   std::string tag;
@@ -34,31 +34,31 @@ struct SimpleBreakpoint {
 };
 
 struct SimpleBreakpointManager {
-  llvm::Optional<SimpleBreakpoint*> match(const StringRef &tag) {
+  llvm::Optional<SimpleBreakpoint *> match(const StringRef &tag) {
     auto it = breakpoints.find(tag);
     if (it != breakpoints.end() && it->second->enabled) {
       return it->second.get();
     }
     return {};
   }
-  SimpleBreakpoint* addBreakpoint(StringRef tag) {
+  SimpleBreakpoint *addBreakpoint(StringRef tag) {
     auto result = breakpoints.insert({tag, nullptr});
     assert(result.second);
     auto &it = result.first;
     it->second = std::make_unique<SimpleBreakpoint>(tag.str());
     return it->second.get();
   }
-  void enableBreakpoint(SimpleBreakpoint* breakpoint) {
+  void enableBreakpoint(SimpleBreakpoint *breakpoint) {
     breakpoint->enabled = true;
   }
-  void disableBreakpoint(SimpleBreakpoint* breakpoint) {
+  void disableBreakpoint(SimpleBreakpoint *breakpoint) {
     breakpoint->enabled = false;
   }
-  void deleteBreakpoint(SimpleBreakpoint* breakpoint) {
+  void deleteBreakpoint(SimpleBreakpoint *breakpoint) {
     breakpoints.erase(breakpoint->tag);
   }
-  static SimpleBreakpointManager& getGlobalSbm() {
-    static SimpleBreakpointManager* sbm = new SimpleBreakpointManager();
+  static SimpleBreakpointManager &getGlobalSbm() {
+    static SimpleBreakpointManager *sbm = new SimpleBreakpointManager();
     return *sbm;
   }
   llvm::StringMap<std::unique_ptr<SimpleBreakpoint>> breakpoints;
@@ -75,55 +75,58 @@ enum DebugExecutionControl {
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
   DebugExecutionContext(
-    llvm::function_ref<DebugExecutionControl(ArrayRef<IRUnit>,
-                          ArrayRef<StringRef>, StringRef, StringRef)> callback)
+      llvm::function_ref<DebugExecutionControl(
+          ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef)>
+          callback)
       : OnBreakpoint(callback), sbm(sbm.getGlobalSbm()) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
-                                  ArrayRef<StringRef> instanceTags,
-                                  llvm::function_ref<ActionResult()> transform,
-                                  const DebugActionBase& action) final {
+                          ArrayRef<StringRef> instanceTags,
+                          llvm::function_ref<ActionResult()> transform,
+                          const DebugActionBase &action) final {
     auto breakpoint = sbm.match(action.tag);
     if (breakpoint) {
-      auto todoNext = OnBreakpoint(units, instanceTags, action.tag, action.desc);
+      auto todoNext =
+          OnBreakpoint(units, instanceTags, action.tag, action.desc);
       switch (todoNext) {
-        case DebugExecutionControl::Apply:
-          transform();
-          return true;
-        case DebugExecutionControl::Skip:
-          return false;
-        // TODO: Support the other DebugExecutionControl
-        // Implement finate state machine that represent debugger flow
-        default:
-          return false;
+      case DebugExecutionControl::Apply:
+        break;
+      case DebugExecutionControl::Skip:
+        return false;
+      // TODO: Support the other DebugExecutionControl
+      // Implement finate state machine that represent debugger flow
+      default:
+        return false;
       }
     }
     transform();
     return true;
   }
-  SimpleBreakpoint* addSimpleBreakpoint(StringRef tag) {
+  SimpleBreakpoint *addSimpleBreakpoint(StringRef tag) {
     return sbm.addBreakpoint(tag);
   }
-  void disableSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+  void disableSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
     sbm.disableBreakpoint(breakpoint);
   }
-  void enableSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+  void enableSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
     sbm.enableBreakpoint(breakpoint);
   }
-  void deleteSimpleBreakpoint(SimpleBreakpoint* breakpoint) {
+  void deleteSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
     sbm.deleteBreakpoint(breakpoint);
   }
 
 private:
-  llvm::function_ref<DebugExecutionControl(ArrayRef<IRUnit>,
-    ArrayRef<StringRef>, StringRef, StringRef)> OnBreakpoint;
-  SimpleBreakpointManager& sbm;
+  llvm::function_ref<DebugExecutionControl(
+      ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef)>
+      OnBreakpoint;
+  SimpleBreakpointManager &sbm;
 };
 
 TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
   int match = 0;
-  auto callback = [&match](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
-      StringRef tag, StringRef desc){
+  auto callback = [&match](ArrayRef<IRUnit> units,
+                           ArrayRef<StringRef> instanceTags, StringRef tag,
+                           StringRef desc) {
     match++;
     return DebugExecutionControl::Skip;
   };
