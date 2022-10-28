@@ -41,7 +41,7 @@ public:
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
                         llvm::function_ref<ActionResult()> transform,
-                        StringRef tag, StringRef description) final;
+                        const DebugActionBase& actionBase) final;
 
   /// Print the counters that have been registered with this instance to the
   /// provided output stream.

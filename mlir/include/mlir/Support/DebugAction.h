@@ -42,6 +42,28 @@ struct ActionResult {
   LogicalResult status;
 };
 
+/// This class represents the base class of a debug action.
+class DebugActionBase {
+public:
+  virtual ~DebugActionBase() = default;
+
+  /// Return the unique action id of this action, use for casting
+  /// functionality.
+  TypeID getActionID() const { return actionID; }
+
+  StringRef tag;
+
+  StringRef desc;
+
+protected:
+  DebugActionBase(TypeID actionID, StringRef tag, StringRef desc)
+    : tag(tag), desc(desc), actionID(actionID) {}
+
+  /// The type of the derived action class. This allows for detecting the
+  /// specific handler of a given action type.
+  TypeID actionID;
+};
+
 //===----------------------------------------------------------------------===//
 // DebugActionManager
 //===----------------------------------------------------------------------===//
@@ -93,7 +115,7 @@ public:
     virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
                               ArrayRef<StringRef> instanceTags,
                               llvm::function_ref<ActionResult()> transform,
-                              StringRef actionTag, StringRef description) {
+                              const DebugActionBase& action) {
       return failure();
     }
 
@@ -135,7 +157,8 @@ public:
     // Invoke the `execute` method on the provided handler.
     auto executeFn = [&](auto *handler, auto &&...handlerParams) {
       return handler->execute(units, instanceTags, transform,
-          std::forward<decltype(handlerParams)>(handlerParams)...);
+          ActionType(
+            std::forward<decltype(handlerParams)>(handlerParams)...));
     };
     FailureOr<bool> result = dispatchToHandler<ActionType, bool>(
         executeFn, std::forward<Args>(args)...);
@@ -179,8 +202,7 @@ private:
       if (auto *handler = dyn_cast<typename ActionType::Handler>(&*it)) {
         result = handlerCallback(handler, std::forward<Args>(args)...);
       } else if (auto *genericHandler = dyn_cast<GenericHandler>(&*it)) {
-        result = handlerCallback(genericHandler, ActionType::getTag(),
-                                 ActionType::getDescription());
+        result = handlerCallback(genericHandler, std::forward<Args>(args)...);
       }
 
       // If the handler succeeded, return the result. Otherwise, try a new
@@ -217,8 +239,16 @@ private:
 /// instances of this action. The parameters to its query methods map 1-1 to the
 /// types on the action type.
 template <typename Derived, typename... ParameterTs>
-class DebugAction {
+class DebugAction : public DebugActionBase {
 public:
+  DebugAction() : DebugActionBase(TypeID::get<Derived>(),
+    Derived::getTag(), Derived::getDescription()) {}
+
+  /// Provide classof to allow casting between action types.
+  static bool classof(const DebugActionBase *action) {
+    return action->getActionID() == TypeID::get<Derived>();
+  }
+
   class Handler : public DebugActionManager::HandlerBase {
   public:
     Handler() : HandlerBase(TypeID::get<Derived>()) {}
@@ -230,7 +260,7 @@ public:
     virtual FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
                         llvm::function_ref<ActionResult()> transform,
-                        ParameterTs... parameters) {
+                        const Derived& action) {
       return failure();
     }
 

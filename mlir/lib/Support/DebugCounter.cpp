@@ -65,9 +65,8 @@ void DebugCounter::addCounter(StringRef actionTag, int64_t countToSkip,
 FailureOr<bool> DebugCounter::execute(ArrayRef<IRUnit> units,
                                   ArrayRef<StringRef> instanceTags,
                                   llvm::function_ref<ActionResult()> transform,
-                                  StringRef tag,
-                                  StringRef description) {
-  auto counterIt = counters.find(tag);
+                                  const DebugActionBase& actionBase) {
+  auto counterIt = counters.find(actionBase.tag);
   if (counterIt == counters.end()) {
     transform();
     return true;

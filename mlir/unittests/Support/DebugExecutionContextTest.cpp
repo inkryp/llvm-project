@@ -34,7 +34,7 @@ struct SimpleBreakpoint {
 };
 
 struct SimpleBreakpointManager {
-  llvm::Optional<SimpleBreakpoint*> match(StringRef &tag) {
+  llvm::Optional<SimpleBreakpoint*> match(const StringRef &tag) {
     auto it = breakpoints.find(tag);
     if (it != breakpoints.end() && it->second->enabled) {
       return it->second.get();
@@ -81,10 +81,10 @@ public:
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                                   ArrayRef<StringRef> instanceTags,
                                   llvm::function_ref<ActionResult()> transform,
-                                  StringRef tag, StringRef desc) final {
-    llvm::Optional<SimpleBreakpoint*> breakpoint = sbm.match(tag);
+                                  const DebugActionBase& action) final {
+    auto breakpoint = sbm.match(action.tag);
     if (breakpoint) {
-      auto todoNext = OnBreakpoint(units, instanceTags, tag, desc);
+      auto todoNext = OnBreakpoint(units, instanceTags, action.tag, action.desc);
       switch (todoNext) {
         case DebugExecutionControl::Apply:
           transform();

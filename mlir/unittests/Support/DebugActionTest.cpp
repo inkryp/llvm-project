@@ -30,6 +30,8 @@ struct OtherSimpleAction : DebugAction<OtherSimpleAction> {
 };
 struct ParametricAction : DebugAction<ParametricAction, bool> {
   MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ParametricAction)
+  ParametricAction(bool executeParam) : executeParam(executeParam) {}
+  bool executeParam;
   static StringRef getTag() { return "param-action"; }
   static StringRef getDescription() { return "param-action-description"; }
 };
@@ -45,15 +47,17 @@ TEST(DebugActionTest, GenericHandler) {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
                         llvm::function_ref<ActionResult()> transform,
-                        StringRef tag, StringRef desc) final {
-      if (tag == SimpleAction::getTag()) {
-        EXPECT_EQ(desc, SimpleAction::getDescription());
+                        const DebugActionBase& actionBase) final {
+      if (llvm::isa<SimpleAction>(actionBase)) {
+        const auto& action = llvm::cast<SimpleAction>(actionBase);
+        EXPECT_EQ(action.tag, SimpleAction::getTag());
         transform();
         return true;
       }
 
-      EXPECT_EQ(tag, ParametricAction::getTag());
-      EXPECT_EQ(desc, ParametricAction::getDescription());
+      const auto& action = llvm::cast<ParametricAction>(actionBase);
+      EXPECT_EQ(action.tag, ParametricAction::getTag());
+      EXPECT_EQ(action.desc, ParametricAction::getDescription());
       return false;
     }
   };
@@ -71,11 +75,11 @@ TEST(DebugActionTest, ActionSpecificHandler) {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
                         llvm::function_ref<ActionResult()> transform,
-                        bool executeParam) final {
-      if (executeParam) {
+                        const ParametricAction& action) final {
+      if (action.executeParam) {
         transform();
       }
-      return executeParam;
+      return action.executeParam;
     }
   };
   manager.registerActionHandler<ActionSpecificHandler>();
@@ -94,7 +98,8 @@ TEST(DebugActionTest, DebugCounterHandler) {
   struct DebugCounterHandler : SimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform) final {
+                        llvm::function_ref<ActionResult()> transform,
+                        const SimpleAction& action) final {
       if (numExecutions++ < 3) {
         transform();
       }
@@ -119,14 +124,16 @@ TEST(DebugActionTest, NonOverlappingActionSpecificHandlers) {
   struct SimpleActionHandler : SimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform) {
+                        llvm::function_ref<ActionResult()> transform,
+                        const SimpleAction& action) final {
       return true;
     }
   };
   struct OtherSimpleActionHandler : OtherSimpleAction::Handler {
     FailureOr<bool> execute(ArrayRef<IRUnit> units,
                         ArrayRef<StringRef> instanceTags,
-                        llvm::function_ref<ActionResult()> transform) {
+                        llvm::function_ref<ActionResult()> transform,
+                        const OtherSimpleAction& action) final {
       return false;
     }
   };
