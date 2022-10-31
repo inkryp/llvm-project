@@ -17,11 +17,18 @@ using namespace mlir;
 
 namespace {
 struct DebuggerAction : public DebugAction<DebuggerAction> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(DebuggerAction)
   static StringRef getTag() { return "debugger-action"; }
   static StringRef getDescription() { return "Test action for debug client"; }
 };
 struct OtherAction : public DebugAction<OtherAction> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(OtherAction)
   static StringRef getTag() { return "other-action"; }
+  static StringRef getDescription() { return "Test action for debug client"; }
+};
+struct ThirdAction : public DebugAction<ThirdAction> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ThirdAction)
+  static StringRef getTag() { return "third-action"; }
   static StringRef getDescription() { return "Test action for debug client"; }
 };
 
@@ -77,7 +84,7 @@ public:
       llvm::function_ref<DebugExecutionControl(
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef)>
           callback)
-      : OnBreakpoint(callback), sbm(sbm.getGlobalSbm()) {}
+      : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
@@ -105,8 +112,6 @@ public:
       case DebugExecutionControl::Finish:
         depthToBreak = depth - 1;
         return true;
-      default:
-        assert(false);
       }
     };
     auto breakpoint = sbm.match(action.tag);
@@ -417,6 +422,53 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 3);
+}
+
+TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
+  DebugActionManager manager;
+
+  std::vector<StringRef> tagSequence = {
+      DebuggerAction::getTag(), ThirdAction::getTag(), OtherAction::getTag(),
+      DebuggerAction::getTag()};
+  std::vector<DebugExecutionControl> controlSequence = {
+      DebugExecutionControl::Apply, DebugExecutionControl::Finish,
+      DebugExecutionControl::Finish, DebugExecutionControl::Apply};
+  int idx = 0, counter = 0;
+  auto onBreakpoint = [&](ArrayRef<IRUnit> units,
+                          ArrayRef<StringRef> instanceTags, StringRef tag,
+                          StringRef desc) {
+    ++counter;
+    EXPECT_EQ(tagSequence[idx], tag);
+    return controlSequence[idx++];
+  };
+
+  auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
+  auto dbg = ptr.get();
+  manager.registerActionHandler(std::move(ptr));
+  dbg->addSimpleBreakpoint(DebuggerAction::getTag());
+  auto toBeDisabled = dbg->addSimpleBreakpoint(OtherAction::getTag());
+
+  auto third = [&]() {
+    EXPECT_EQ(counter, 2);
+    return noOp();
+  };
+  auto nested = [&]() {
+    EXPECT_EQ(counter, 1);
+    EXPECT_TRUE(succeeded(manager.execute<ThirdAction>({}, {}, third)));
+    EXPECT_EQ(counter, 2);
+    return noOp();
+  };
+  auto original = [&]() {
+    EXPECT_EQ(counter, 1);
+    dbg->disableSimpleBreakpoint(toBeDisabled);
+    dbg->addSimpleBreakpoint(ThirdAction::getTag());
+    EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
+    EXPECT_EQ(counter, 3);
+    return noOp();
+  };
+
+  EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
+  EXPECT_EQ(counter, 4);
 }
 } // namespace
 
