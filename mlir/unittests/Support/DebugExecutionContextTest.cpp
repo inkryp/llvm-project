@@ -49,9 +49,11 @@ struct SimpleBreakpointManager {
     return {};
   }
   SimpleBreakpoint *addBreakpoint(StringRef tag) {
-    auto result = breakpoints.insert(
-        {tag, std::make_unique<SimpleBreakpoint>(tag.str())});
+    auto result = breakpoints.insert({tag, nullptr});
     auto &it = result.first;
+    if (result.second) {
+      it->second = std::make_unique<SimpleBreakpoint>(tag.str());
+    }
     return it->second.get();
   }
   void enableBreakpoint(SimpleBreakpoint *breakpoint) {
