@@ -1,0 +1,46 @@
+//===- GdbDebugExecutionContextHookTest.cpp - Gdb integration first impl --===//
+//
+// Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
+// See https://llvm.org/LICENSE.txt for license information.
+// SPDX-License-Identifier: Apache-2.0 WITH LLVM-exception
+//
+//===----------------------------------------------------------------------===//
+
+#include "mlir/Support/GdbDebugExecutionContextHook.h"
+#include "gmock/gmock.h"
+#include <signal.h>
+
+using namespace mlir;
+
+// DebugActionManager is only enabled in DEBUG mode.
+#if LLVM_ENABLE_ABI_BREAKING_CHECKS
+
+namespace {
+struct DebuggerAction : public DebugAction<DebuggerAction> {
+  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(DebuggerAction)
+  static StringRef getTag() { return "debugger-action"; }
+  static StringRef getDescription() { return "Test action for debug client"; }
+};
+
+ActionResult noOp() { return {nullptr, false, success()}; }
+
+TEST(DebugExecutionContext, Demo) {
+  DebugActionManager manager;
+  auto onBreakpoint = [&](ArrayRef<IRUnit> units,
+                          ArrayRef<StringRef> instanceTags, StringRef tag,
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
+    return GdbOnBreakpoint();
+  };
+
+  auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
+  auto dbg = ptr.get();
+  manager.registerActionHandler(std::move(ptr));
+  dbg->addSimpleBreakpoint(DebuggerAction::getTag());
+
+  EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
+  EXPECT_EQ(GDB_RETURN, 1);
+}
+} // namespace
+
+#endif
