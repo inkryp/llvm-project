@@ -81,52 +81,7 @@ public:
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
-                          const DebugActionBase &action) final {
-    DebugActionInformation info{daiHead, action, 0};
-    if (daiHead) {
-      info.depth = daiHead->depth;
-    }
-    info.depth++;
-    daiHead = &info;
-    auto &depth = daiHead->depth;
-    auto handleUserInput = [&]() -> bool {
-      auto todoNext =
-          OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
-      switch (todoNext) {
-      case DebugExecutionControl::Apply:
-        depthToBreak = std::nullopt;
-        return true;
-      case DebugExecutionControl::Skip:
-        depthToBreak = std::nullopt;
-        return false;
-      case DebugExecutionControl::Step:
-        depthToBreak = depth + 1;
-        return true;
-      case DebugExecutionControl::Next:
-        depthToBreak = depth;
-        return true;
-      case DebugExecutionControl::Finish:
-        depthToBreak = depth - 1;
-        return true;
-      }
-    };
-    auto breakpoint = sbm.match(action.tag);
-    bool apply = true;
-    if (breakpoint || (depthToBreak && depth <= depthToBreak)) {
-      apply = handleUserInput();
-    }
-
-    if (apply) {
-      transform();
-    }
-
-    if (depthToBreak && depth <= depthToBreak) {
-      handleUserInput();
-    }
-    info.depth--;
-    daiHead = info.prev;
-    return apply;
-  }
+                          const DebugActionBase &action) final;
   SimpleBreakpoint *addSimpleBreakpoint(StringRef tag) {
     return sbm.addBreakpoint(tag);
   }
