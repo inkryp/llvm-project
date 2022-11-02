@@ -64,23 +64,32 @@ struct SimpleBreakpointManager {
   llvm::StringMap<std::unique_ptr<SimpleBreakpoint>> breakpoints;
 };
 
+struct DebugActionInformation {
+  const DebugActionInformation *prev;
+  const DebugActionBase &action;
+};
+
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext(
-      llvm::function_ref<DebugExecutionControl(
-          ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef)>
-          callback)
-      : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()) {}
+  DebugExecutionContext(llvm::function_ref<DebugExecutionControl(
+                            ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef,
+                            StringRef, const DebugActionInformation *)>
+                            callback)
+      : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()),
+        daiHead(nullptr) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final {
+    DebugActionInformation info{daiHead, action};
+    daiHead = &info;
     ++depth;
     auto handleUserInput = [&]() -> bool {
       auto todoNext =
-          OnBreakpoint(units, instanceTags, action.tag, action.desc);
+          OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
       while (depth == 1 && todoNext == DebugExecutionControl::Finish) {
-        todoNext = OnBreakpoint(units, instanceTags, action.tag, action.desc);
+        todoNext =
+            OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
       }
       switch (todoNext) {
       case DebugExecutionControl::Apply:
@@ -114,6 +123,7 @@ public:
       handleUserInput();
     }
     --depth;
+    daiHead = info.prev;
     return apply;
   }
   SimpleBreakpoint *addSimpleBreakpoint(StringRef tag) {
@@ -131,9 +141,11 @@ public:
 
 private:
   llvm::function_ref<DebugExecutionControl(
-      ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef)>
+      ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
+      const DebugActionInformation *)>
       OnBreakpoint;
   SimpleBreakpointManager &sbm;
+  const DebugActionInformation *daiHead;
   int depth = 0;
   Optional<int> depthToBreak;
 };

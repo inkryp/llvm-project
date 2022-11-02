@@ -34,12 +34,58 @@ struct ThirdAction : public DebugAction<ThirdAction> {
 
 ActionResult noOp() { return {nullptr, false, success()}; }
 
+TEST(DebugExecutionContext, DebugActionInformationTest) {
+  DebugActionManager manager;
+
+  std::vector<DebugExecutionControl> controlSequence = {
+      DebugExecutionControl::Step, DebugExecutionControl::Step,
+      DebugExecutionControl::Apply};
+  int idx = 0;
+  StringRef current;
+  auto onBreakpoint = [&](ArrayRef<IRUnit> units,
+                          ArrayRef<StringRef> instanceTags, StringRef tag,
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
+    current = backtrace->action.tag;
+    return controlSequence[idx++];
+  };
+
+  auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
+  auto dbg = ptr.get();
+  manager.registerActionHandler(std::move(ptr));
+  std::vector<SimpleBreakpoint *> breakpoints;
+  breakpoints.push_back(dbg->addSimpleBreakpoint(DebuggerAction::getTag()));
+  breakpoints.push_back(dbg->addSimpleBreakpoint(OtherAction::getTag()));
+  breakpoints.push_back(dbg->addSimpleBreakpoint(ThirdAction::getTag()));
+
+  auto third = [&]() {
+    EXPECT_EQ(current, ThirdAction::getTag());
+    return noOp();
+  };
+  auto nested = [&]() {
+    EXPECT_EQ(current, OtherAction::getTag());
+    EXPECT_TRUE(succeeded(manager.execute<ThirdAction>({}, {}, third)));
+    return noOp();
+  };
+  auto original = [&]() {
+    EXPECT_EQ(current, DebuggerAction::getTag());
+    EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
+    return noOp();
+  };
+
+  EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
+  for (auto *breakpoint : breakpoints) {
+    dbg->deleteSimpleBreakpoint(breakpoint);
+  }
+}
+
 TEST(DebugExecutionContext, DebuggerTest) {
   DebugActionManager manager;
   int match = 0;
   auto callback = [&match](ArrayRef<IRUnit> units,
                            ArrayRef<StringRef> instanceTags, StringRef tag,
-                           StringRef desc) {
+                           StringRef desc,
+                           const DebugActionInformation *backtrace) {
     match++;
     return DebugExecutionControl::Skip;
   };
@@ -79,7 +125,8 @@ TEST(DebugExecutionContext, ApplyTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -105,7 +152,8 @@ TEST(DebugExecutionContext, SkipTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -132,7 +180,8 @@ TEST(DebugExecutionContext, StepApplyTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -164,7 +213,8 @@ TEST(DebugExecutionContext, StepNothingInsideTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -191,7 +241,8 @@ TEST(DebugExecutionContext, NextTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -220,7 +271,8 @@ TEST(DebugExecutionContext, FinishTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -253,7 +305,8 @@ TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -288,7 +341,8 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
@@ -318,7 +372,8 @@ TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc) {
+                          StringRef desc,
+                          const DebugActionInformation *backtrace) {
     ++counter;
     EXPECT_EQ(tagSequence[idx], tag);
     return controlSequence[idx++];
