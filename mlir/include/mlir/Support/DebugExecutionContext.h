@@ -67,6 +67,7 @@ struct SimpleBreakpointManager {
 struct DebugActionInformation {
   const DebugActionInformation *prev;
   const DebugActionBase &action;
+  size_t depth;
 };
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
@@ -81,9 +82,13 @@ public:
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final {
-    DebugActionInformation info{daiHead, action};
+    DebugActionInformation info{daiHead, action, 0};
+    if (daiHead) {
+      info.depth = daiHead->depth;
+    }
+    info.depth++;
     daiHead = &info;
-    ++depth;
+    auto &depth = daiHead->depth;
     auto handleUserInput = [&]() -> bool {
       auto todoNext =
           OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
@@ -122,7 +127,7 @@ public:
     if (depthToBreak && depth <= depthToBreak) {
       handleUserInput();
     }
-    --depth;
+    info.depth--;
     daiHead = info.prev;
     return apply;
   }
@@ -146,8 +151,7 @@ private:
       OnBreakpoint;
   SimpleBreakpointManager &sbm;
   const DebugActionInformation *daiHead;
-  int depth = 0;
-  Optional<int> depthToBreak;
+  Optional<size_t> depthToBreak;
 };
 
 } // namespace mlir

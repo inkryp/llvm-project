@@ -42,11 +42,13 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
       DebugExecutionControl::Apply};
   int idx = 0;
   StringRef current;
+  size_t currentDepth;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
                           StringRef desc,
                           const DebugActionInformation *backtrace) {
     current = backtrace->action.tag;
+    currentDepth = backtrace->depth;
     return controlSequence[idx++];
   };
 
@@ -60,15 +62,18 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
 
   auto third = [&]() {
     EXPECT_EQ(current, ThirdAction::getTag());
+    EXPECT_EQ(currentDepth, 3UL);
     return noOp();
   };
   auto nested = [&]() {
     EXPECT_EQ(current, OtherAction::getTag());
+    EXPECT_EQ(currentDepth, 2UL);
     EXPECT_TRUE(succeeded(manager.execute<ThirdAction>({}, {}, third)));
     return noOp();
   };
   auto original = [&]() {
     EXPECT_EQ(current, DebuggerAction::getTag());
+    EXPECT_EQ(currentDepth, 1UL);
     EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
     return noOp();
   };
