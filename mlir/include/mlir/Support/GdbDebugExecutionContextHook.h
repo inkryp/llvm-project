@@ -26,8 +26,9 @@ DebugExecutionControl GdbOnBreakpoint() {
 }
 
 extern "C" {
-void mlirDebuggerSetControlApply() {
-  GDB_RETURN = DebugExecutionControl::Apply;
+void mlirDebuggerSetControl(int controlOption) {
+  auto newControlOption = static_cast<DebugExecutionControl>(controlOption);
+  GDB_RETURN = newControlOption;
 }
 }
 
