@@ -92,10 +92,6 @@ public:
     auto handleUserInput = [&]() -> bool {
       auto todoNext =
           OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
-      while (depth == 1 && todoNext == DebugExecutionControl::Finish) {
-        todoNext =
-            OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
-      }
       switch (todoNext) {
       case DebugExecutionControl::Apply:
         depthToBreak = std::nullopt;

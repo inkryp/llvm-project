@@ -337,12 +337,9 @@ TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
 
 TEST(DebugExecutionContext, FinishNothingBackTest) {
   DebugActionManager manager;
-  std::vector<StringRef> tagSequence = {DebuggerAction::getTag(),
-                                        DebuggerAction::getTag(),
-                                        DebuggerAction::getTag()};
+  std::vector<StringRef> tagSequence = {DebuggerAction::getTag()};
   std::vector<DebugExecutionControl> controlSequence = {
-      DebugExecutionControl::Finish, DebugExecutionControl::Finish,
-      DebugExecutionControl::Apply};
+      DebugExecutionControl::Finish};
   int idx = 0, counter = 0;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
@@ -353,7 +350,7 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
     return controlSequence[idx++];
   };
   auto callback = [&]() {
-    EXPECT_EQ(counter, 3);
+    EXPECT_EQ(counter, 1);
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
@@ -362,7 +359,7 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
   dbg->addSimpleBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
-  EXPECT_EQ(counter, 3);
+  EXPECT_EQ(counter, 1);
 }
 
 TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
