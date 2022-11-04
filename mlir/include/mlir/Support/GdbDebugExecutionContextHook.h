@@ -16,20 +16,30 @@
 #include "mlir/Support/DebugExecutionContext.h"
 #include <signal.h>
 
-namespace mlir {
-
-static DebugExecutionControl GDB_RETURN = DebugExecutionControl::Apply;
-
-DebugExecutionControl GdbOnBreakpoint() {
-  raise(SIGTRAP);
-  return GDB_RETURN;
-}
+static mlir::DebugExecutionControl GDB_RETURN =
+    mlir::DebugExecutionControl::Apply;
 
 extern "C" {
 void mlirDebuggerSetControl(int controlOption) {
-  auto newControlOption = static_cast<DebugExecutionControl>(controlOption);
-  GDB_RETURN = newControlOption;
+  GDB_RETURN = static_cast<mlir::DebugExecutionControl>(controlOption);
 }
+
+void mlirDebuggerAddBreakpoint(mlir::DebugExecutionContext *dbg);
+}
+
+namespace mlir {
+static void *volatile sink;
+
+// TODO: Just expose this in the header
+DebugExecutionControl GdbOnBreakpoint(DebugExecutionContext *dbg) {
+  static bool initialized = [&]() {
+    sink = (void *)mlirDebuggerSetControl;
+    sink = (void *)mlirDebuggerAddBreakpoint;
+    return true;
+  }();
+  (void)initialized;
+  raise(SIGTRAP);
+  return GDB_RETURN;
 }
 
 } // namespace mlir

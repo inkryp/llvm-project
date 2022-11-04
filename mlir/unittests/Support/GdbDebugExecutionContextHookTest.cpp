@@ -24,17 +24,18 @@ struct DebuggerAction : public DebugAction<DebuggerAction> {
 
 ActionResult noOp() { return {nullptr, false, success()}; }
 
-TEST(DebugExecutionContext, Demo) {
+TEST(GdbDebugExecutionContextHook, Demo) {
   DebugActionManager manager;
+  DebugExecutionContext *dbg;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
                           StringRef desc,
                           const DebugActionInformation *backtrace) {
-    return GdbOnBreakpoint();
+    return GdbOnBreakpoint(dbg);
   };
 
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
+  dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
   dbg->addSimpleBreakpoint(DebuggerAction::getTag());
 
