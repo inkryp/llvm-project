@@ -11,6 +11,12 @@
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
+// DebugActionInformation
+//===----------------------------------------------------------------------===//
+
+size_t DebugActionInformation::depth = 0;
+
+//===----------------------------------------------------------------------===//
 // DebugExecutionContext
 //===----------------------------------------------------------------------===//
 
@@ -19,7 +25,7 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
                                ArrayRef<StringRef> instanceTags,
                                llvm::function_ref<ActionResult()> transform,
                                const DebugActionBase &action) {
-  DebugActionInformation info{daiHead, action, 0};
+  DebugActionInformation info{daiHead, action};
   if (daiHead) {
     info.depth = daiHead->depth;
   }

@@ -67,7 +67,7 @@ struct SimpleBreakpointManager {
 struct DebugActionInformation {
   const DebugActionInformation *prev;
   const DebugActionBase &action;
-  size_t depth;
+  static size_t depth;
 };
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
