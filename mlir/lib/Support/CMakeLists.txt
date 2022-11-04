@@ -2,6 +2,7 @@ set(LLVM_OPTIONAL_SOURCES
   DebugCounter.cpp
   DebugExecutionContext.cpp
   FileUtilities.cpp
+  GdbDebugExecutionContextHook.cpp
   IndentedOstream.cpp
   InterfaceSupport.cpp
   StorageUniquer.cpp
@@ -14,6 +15,7 @@ add_mlir_library(MLIRSupport
   DebugCounter.cpp
   DebugExecutionContext.cpp
   FileUtilities.cpp
+  GdbDebugExecutionContextHook.cpp
   IndentedOstream.cpp
   InterfaceSupport.cpp
   StorageUniquer.cpp
