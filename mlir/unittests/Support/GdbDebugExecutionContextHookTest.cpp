@@ -29,7 +29,7 @@ TEST(GdbDebugExecutionContextHook, Demo) {
   DebugExecutionContext *dbg;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc,
+                          StringRef desc, const int &depth,
                           const DebugActionInformation *backtrace) {
     return GdbOnBreakpoint(dbg);
   };

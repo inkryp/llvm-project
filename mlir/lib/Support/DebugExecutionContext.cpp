@@ -11,12 +11,6 @@
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
-// DebugActionInformation
-//===----------------------------------------------------------------------===//
-
-size_t DebugActionInformation::depth = 0;
-
-//===----------------------------------------------------------------------===//
 // DebugExecutionContext
 //===----------------------------------------------------------------------===//
 
@@ -26,15 +20,11 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
                                llvm::function_ref<ActionResult()> transform,
                                const DebugActionBase &action) {
   DebugActionInformation info{daiHead, action};
-  if (daiHead) {
-    info.depth = daiHead->depth;
-  }
-  info.depth++;
   daiHead = &info;
-  auto &depth = daiHead->depth;
+  ++depth;
   auto handleUserInput = [&]() -> bool {
-    auto todoNext =
-        OnBreakpoint(units, instanceTags, action.tag, action.desc, daiHead);
+    auto todoNext = OnBreakpoint(units, instanceTags, action.tag, action.desc,
+                                 depth, daiHead);
     switch (todoNext) {
     case DebugExecutionControl::Apply:
       depthToBreak = std::nullopt;
@@ -66,7 +56,7 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
   if (depthToBreak && depth <= depthToBreak) {
     handleUserInput();
   }
-  info.depth--;
+  --depth;
   daiHead = info.prev;
   return apply;
 }

@@ -29,15 +29,15 @@ enum DebugExecutionControl {
 struct DebugActionInformation {
   const DebugActionInformation *prev;
   const DebugActionBase &action;
-  static size_t depth;
 };
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext(llvm::function_ref<DebugExecutionControl(
-                            ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef,
-                            StringRef, const DebugActionInformation *)>
-                            callback)
+  DebugExecutionContext(
+      llvm::function_ref<DebugExecutionControl(
+          ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
+          const int &, const DebugActionInformation *)>
+          callback)
       : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()),
         daiHead(nullptr) {}
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
@@ -60,11 +60,12 @@ public:
 private:
   llvm::function_ref<DebugExecutionControl(
       ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
-      const DebugActionInformation *)>
+      const int &depth, const DebugActionInformation *)>
       OnBreakpoint;
+  int depth = 0;
   SimpleBreakpointManager &sbm;
   const DebugActionInformation *daiHead;
-  Optional<size_t> depthToBreak;
+  Optional<int> depthToBreak;
 };
 
 } // namespace mlir
