@@ -37,6 +37,37 @@ ActionResult noOp() { return {nullptr, false, success()}; }
 TEST(DebugExecutionContext, DebugActionInformationTest) {
   DebugActionManager manager;
 
+  std::vector<std::vector<StringRef>> expectedStacks = {
+      {DebuggerAction::getTag()},
+      {OtherAction::getTag(), DebuggerAction::getTag()},
+      {ThirdAction::getTag(), OtherAction::getTag(), DebuggerAction::getTag()}};
+  std::vector<StringRef> currentStack;
+
+  auto generateStack = [&](const DebugActionInformation *backtrace) {
+    currentStack.clear();
+    auto *cur = backtrace;
+    while (cur != nullptr) {
+      currentStack.push_back(cur->action.tag);
+      cur = cur->prev;
+    }
+    return currentStack;
+  };
+
+  auto checkStacks = [&](const std::vector<StringRef> &currentStack,
+                         const std::vector<StringRef> &expectedStack) {
+    if (currentStack.size() != expectedStack.size()) {
+      return false;
+    }
+    bool areEqual = true;
+    for (int i = 0; i < (int)currentStack.size(); ++i) {
+      if (currentStack[i] != expectedStack[i]) {
+        areEqual = false;
+        break;
+      }
+    }
+    return areEqual;
+  };
+
   std::vector<DebugExecutionControl> controlSequence = {
       DebugExecutionControl::Step, DebugExecutionControl::Step,
       DebugExecutionControl::Apply};
@@ -49,6 +80,7 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
                           const DebugActionInformation *backtrace) {
     current = backtrace->action.tag;
     currentDepth = depth;
+    generateStack(backtrace);
     return controlSequence[idx++];
   };
 
@@ -63,17 +95,20 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
   auto third = [&]() {
     EXPECT_EQ(current, ThirdAction::getTag());
     EXPECT_EQ(currentDepth, 3);
+    EXPECT_TRUE(checkStacks(currentStack, expectedStacks[2]));
     return noOp();
   };
   auto nested = [&]() {
     EXPECT_EQ(current, OtherAction::getTag());
     EXPECT_EQ(currentDepth, 2);
+    EXPECT_TRUE(checkStacks(currentStack, expectedStacks[1]));
     EXPECT_TRUE(succeeded(manager.execute<ThirdAction>({}, {}, third)));
     return noOp();
   };
   auto original = [&]() {
     EXPECT_EQ(current, DebuggerAction::getTag());
     EXPECT_EQ(currentDepth, 1);
+    EXPECT_TRUE(checkStacks(currentStack, expectedStacks[0]));
     EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
     return noOp();
   };
