@@ -24,3 +24,11 @@ define mlir finish
   call (void)mlirDebuggerSetControl(5)
   continue
 end
+
+define mlir breakpoint
+  set $i = 0
+  while $i < $argc
+    eval "call (void)mlirDebuggerAddBreakpoint($arg%d)", $i
+    set $i = $i + 1
+  end
+end

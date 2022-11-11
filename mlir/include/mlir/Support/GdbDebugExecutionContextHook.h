@@ -21,7 +21,7 @@ extern mlir::DebugExecutionControl GDB_RETURN;
 extern "C" {
 void mlirDebuggerSetControl(int controlOption);
 
-void mlirDebuggerAddBreakpoint(mlir::DebugExecutionContext *dbg);
+void mlirDebuggerAddBreakpoint(const char *test);
 }
 
 namespace mlir {
