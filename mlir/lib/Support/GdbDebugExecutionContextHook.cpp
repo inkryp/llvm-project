@@ -22,7 +22,10 @@ void mlirDebuggerAddBreakpoint(mlir::DebugExecutionContext *dbg) {}
 
 namespace mlir {
 
-DebugExecutionControl GdbOnBreakpoint(DebugExecutionContext *dbg) {
+static void *volatile sink;
+
+LLVM_ATTRIBUTE_USED DebugExecutionControl
+GdbOnBreakpoint(DebugExecutionContext *dbg) {
   static bool initialized = [&]() {
     sink = (void *)mlirDebuggerSetControl;
     sink = (void *)mlirDebuggerAddBreakpoint;

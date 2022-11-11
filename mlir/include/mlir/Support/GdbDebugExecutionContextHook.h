@@ -13,6 +13,7 @@
 #ifndef MLIR_SUPPORT_GDBDEBUGEXECUTIONCONTEXTHOOK_H
 #define MLIR_SUPPORT_GDBDEBUGEXECUTIONCONTEXTHOOK_H
 
+#include "llvm/Support/Compiler.h"
 #include "mlir/Support/DebugExecutionContext.h"
 
 extern mlir::DebugExecutionControl GDB_RETURN;
@@ -25,9 +26,7 @@ void mlirDebuggerAddBreakpoint(mlir::DebugExecutionContext *dbg);
 
 namespace mlir {
 
-static void *volatile sink;
-
-DebugExecutionControl GdbOnBreakpoint(DebugExecutionContext *dbg);
+LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint(DebugExecutionContext *dbg);
 
 } // namespace mlir
 
