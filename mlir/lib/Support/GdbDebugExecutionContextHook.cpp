@@ -6,8 +6,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include "mlir/Support/GdbDebugExecutionContextHook.h"
+#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include <signal.h>
 
 mlir::DebugExecutionControl GDB_RETURN = mlir::DebugExecutionControl::Apply;
@@ -19,7 +19,7 @@ void mlirDebuggerSetControl(int controlOption) {
 }
 
 void mlirDebuggerAddBreakpoint(const char *test) {
-  auto &sbm = mlir::SimpleBreakpointManager::getGlobalSbm();
+  auto &sbm = mlir::SimpleBreakpointManager::getGlobalInstance();
   sbm.addBreakpoint(mlir::StringRef(test));
 }
 }

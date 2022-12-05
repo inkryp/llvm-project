@@ -39,26 +39,13 @@ public:
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
           const int &, const DebugActionInformation *)>
           callback)
-      : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()),
-        daiHead(nullptr) {
-    registerBreakpointManager<SimpleBreakpointManager>();
-    registerBreakpointManager<RewritePatternBreakpointManager>();
+      : OnBreakpoint(callback), daiHead(nullptr) {
+    breakpointManagers.push_back(&SimpleBreakpointManager::getGlobalInstance());
   }
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
-  template <typename T>
-  void registerBreakpointManager() {
-    breakpointManagers[TypeID::get<T>()] = std::make_unique<T>();
-  }
-  template <typename T>
-  T *getBreakpointManager() {
-    return (T *)breakpointManagers[TypeID::get<T>()].get();
-  }
-  SimpleBreakpointManager *getSbm() {
-    return getBreakpointManager<SimpleBreakpointManager>();
-  }
 
 private:
   llvm::function_ref<DebugExecutionControl(
@@ -66,10 +53,9 @@ private:
       const int &depth, const DebugActionInformation *)>
       OnBreakpoint;
   int depth = 0;
-  SimpleBreakpointManager &sbm;
   const DebugActionInformation *daiHead;
   Optional<int> depthToBreak;
-  DenseMap<TypeID, std::unique_ptr<BreakpointManager>> breakpointManagers;
+  SmallVector<BreakpointManager *> breakpointManagers;
 };
 
 } // namespace mlir

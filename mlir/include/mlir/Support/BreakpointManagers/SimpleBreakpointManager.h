@@ -71,7 +71,7 @@ public:
     auto *simpleBreakpoint = dyn_cast<SimpleBreakpoint>(breakpoint);
     breakpoints.erase(simpleBreakpoint->tag);
   }
-  static SimpleBreakpointManager &getGlobalSbm() {
+  static SimpleBreakpointManager &getGlobalInstance() {
     static SimpleBreakpointManager *sbm = new SimpleBreakpointManager();
     return *sbm;
   }

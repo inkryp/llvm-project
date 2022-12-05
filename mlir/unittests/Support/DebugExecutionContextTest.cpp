@@ -85,12 +85,17 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
   };
 
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
   std::vector<SimpleBreakpoint *> breakpoints;
-  breakpoints.push_back(dbg->getSbm()->addBreakpoint(DebuggerAction::getTag()));
-  breakpoints.push_back(dbg->getSbm()->addBreakpoint(OtherAction::getTag()));
-  breakpoints.push_back(dbg->getSbm()->addBreakpoint(ThirdAction::getTag()));
+  breakpoints.push_back(
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          DebuggerAction::getTag()));
+  breakpoints.push_back(
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          OtherAction::getTag()));
+  breakpoints.push_back(
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          ThirdAction::getTag()));
 
   auto third = [&]() {
     EXPECT_EQ(current, ThirdAction::getTag());
@@ -115,7 +120,7 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   for (auto *breakpoint : breakpoints) {
-    dbg->getSbm()->deleteBreakpoint(breakpoint);
+    SimpleBreakpointManager::getGlobalInstance().deleteBreakpoint(breakpoint);
   }
 }
 
@@ -130,29 +135,30 @@ TEST(DebugExecutionContext, DebuggerTest) {
     return DebugExecutionControl::Skip;
   };
   auto ptr = std::make_unique<DebugExecutionContext>(callback);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
 
   EXPECT_EQ(match, 0);
 
-  auto dbgBreakpoint = dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint =
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          DebuggerAction::getTag());
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 1);
 
-  dbg->getSbm()->disableBreakpoint(dbgBreakpoint);
+  SimpleBreakpointManager::getGlobalInstance().disableBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 1);
 
-  dbg->getSbm()->enableBreakpoint(dbgBreakpoint);
+  SimpleBreakpointManager::getGlobalInstance().enableBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 
-  dbg->getSbm()->deleteBreakpoint(dbgBreakpoint);
+  SimpleBreakpointManager::getGlobalInstance().deleteBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 }
@@ -176,9 +182,9 @@ TEST(DebugExecutionContext, ApplyTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -203,9 +209,9 @@ TEST(DebugExecutionContext, SkipTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -236,9 +242,9 @@ TEST(DebugExecutionContext, StepApplyTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 2);
@@ -264,9 +270,9 @@ TEST(DebugExecutionContext, StepNothingInsideTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 2);
@@ -292,9 +298,9 @@ TEST(DebugExecutionContext, NextTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 2);
@@ -327,13 +333,14 @@ TEST(DebugExecutionContext, FinishTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  auto dbgBreakpoint = dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint =
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 3);
-  dbg->getSbm()->deleteBreakpoint(dbgBreakpoint);
+  SimpleBreakpointManager::getGlobalInstance().deleteBreakpoint(dbgBreakpoint);
 }
 
 TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
@@ -362,9 +369,9 @@ TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(OtherAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      OtherAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 2);
@@ -389,9 +396,9 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
     return noOp();
   };
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -417,10 +424,12 @@ TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
   };
 
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
-  auto toBeDisabled = dbg->getSbm()->addBreakpoint(OtherAction::getTag());
+  SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+      DebuggerAction::getTag());
+  auto toBeDisabled =
+      SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+          OtherAction::getTag());
 
   auto third = [&]() {
     EXPECT_EQ(counter, 2);
@@ -434,8 +443,10 @@ TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
   };
   auto original = [&]() {
     EXPECT_EQ(counter, 1);
-    dbg->getSbm()->disableBreakpoint(toBeDisabled);
-    dbg->getSbm()->addBreakpoint(ThirdAction::getTag());
+    SimpleBreakpointManager::getGlobalInstance().disableBreakpoint(
+        toBeDisabled);
+    SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
+        ThirdAction::getTag());
     EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
     EXPECT_EQ(counter, 3);
     return noOp();

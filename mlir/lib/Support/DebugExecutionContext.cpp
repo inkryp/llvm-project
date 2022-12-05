@@ -45,7 +45,7 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
     }
   };
   llvm::Optional<Breakpoint *> breakpoint;
-  for (auto &[typeId, breakpointManager] : breakpointManagers) {
+  for (auto *breakpointManager : breakpointManagers) {
     auto cur = breakpointManager->match(action, instanceTags, units);
     if (cur) {
       breakpoint = cur;
