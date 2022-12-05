@@ -63,7 +63,9 @@ public:
 
   virtual void deleteBreakpoint(BreakpointBase *breakpoint) = 0;
 
-  virtual llvm::Optional<BreakpointBase *> match(const StringRef &tag) = 0;
+  virtual llvm::Optional<BreakpointBase *>
+  match(const DebugActionBase &action, ArrayRef<StringRef> instanceTags,
+        ArrayRef<IRUnit> unit) = 0;
 
   void enableBreakpoint(BreakpointBase *breakpoint) {
     breakpoint->setEnableStatusTrue();

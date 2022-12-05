@@ -50,8 +50,10 @@ public:
            TypeID::get<SimpleBreakpointManager>();
   }
 
-  llvm::Optional<BreakpointBase *> match(const StringRef &tag) override {
-    auto it = breakpoints.find(tag);
+  llvm::Optional<BreakpointBase *> match(const DebugActionBase &action,
+                                         ArrayRef<StringRef> instanceTags,
+                                         ArrayRef<IRUnit> unit) override {
+    auto it = breakpoints.find(action.tag);
     if (it != breakpoints.end() && it->second->getEnableStatus()) {
       return it->second.get();
     }
