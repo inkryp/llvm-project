@@ -67,7 +67,7 @@ private:
   SimpleBreakpointManager &sbm;
   const DebugActionInformation *daiHead;
   Optional<int> depthToBreak;
-  DenseMap<TypeID, std::unique_ptr<BreakpointManagerBase>> breakpointManagers;
+  DenseMap<TypeID, std::unique_ptr<BreakpointManager>> breakpointManagers;
 };
 
 } // namespace mlir

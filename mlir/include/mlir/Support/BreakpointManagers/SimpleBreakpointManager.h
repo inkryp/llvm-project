@@ -19,15 +19,15 @@
 
 namespace mlir {
 
-class SimpleBreakpoint : public BreakpointBase {
+class SimpleBreakpoint : public Breakpoint {
 public:
-  SimpleBreakpoint() : BreakpointBase(TypeID::get<SimpleBreakpoint>()) {}
+  SimpleBreakpoint() : Breakpoint(TypeID::get<SimpleBreakpoint>()) {}
 
   SimpleBreakpoint(const std::string &_tag)
-      : BreakpointBase(TypeID::get<SimpleBreakpoint>()), tag(_tag) {}
+      : Breakpoint(TypeID::get<SimpleBreakpoint>()), tag(_tag) {}
 
   /// Provide classof to allow casting between breakpoint types.
-  static bool classof(const BreakpointBase *breakpoint) {
+  static bool classof(const Breakpoint *breakpoint) {
     return breakpoint->getBreakpointID() == TypeID::get<SimpleBreakpoint>();
   }
 
@@ -39,20 +39,20 @@ private:
   friend class SimpleBreakpointManager;
 };
 
-class SimpleBreakpointManager : public BreakpointManagerBase {
+class SimpleBreakpointManager : public BreakpointManager {
 public:
   SimpleBreakpointManager()
-      : BreakpointManagerBase(TypeID::get<SimpleBreakpointManager>()) {}
+      : BreakpointManager(TypeID::get<SimpleBreakpointManager>()) {}
 
   /// Provide classof to allow casting between breakpoint manager types.
-  static bool classof(const BreakpointManagerBase *breakpointManager) {
+  static bool classof(const BreakpointManager *breakpointManager) {
     return breakpointManager->getBreakpointManagerID() ==
            TypeID::get<SimpleBreakpointManager>();
   }
 
-  llvm::Optional<BreakpointBase *> match(const DebugActionBase &action,
-                                         ArrayRef<StringRef> instanceTags,
-                                         ArrayRef<IRUnit> unit) override {
+  llvm::Optional<Breakpoint *> match(const DebugActionBase &action,
+                                     ArrayRef<StringRef> instanceTags,
+                                     ArrayRef<IRUnit> units) override {
     auto it = breakpoints.find(action.tag);
     if (it != breakpoints.end() && it->second->getEnableStatus()) {
       return it->second.get();
@@ -67,9 +67,9 @@ public:
     }
     return it->second.get();
   }
-  void deleteBreakpoint(BreakpointBase *breakpointBase) override {
-    auto *breakpoint = dyn_cast<SimpleBreakpoint>(breakpointBase);
-    breakpoints.erase(breakpoint->tag);
+  void deleteBreakpoint(Breakpoint *breakpoint) override {
+    auto *simpleBreakpoint = dyn_cast<SimpleBreakpoint>(breakpoint);
+    breakpoints.erase(simpleBreakpoint->tag);
   }
   static SimpleBreakpointManager &getGlobalSbm() {
     static SimpleBreakpointManager *sbm = new SimpleBreakpointManager();

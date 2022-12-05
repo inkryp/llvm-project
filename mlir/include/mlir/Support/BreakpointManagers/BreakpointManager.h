@@ -19,16 +19,16 @@
 namespace mlir {
 
 /// This class represents the base class of a breakpoint.
-class BreakpointBase {
+class Breakpoint {
 public:
-  virtual ~BreakpointBase() = default;
+  virtual ~Breakpoint() = default;
 
   /// Return the unique breakpoint id of this breakpoint, use for casting
   /// functionality.
   TypeID getBreakpointID() const { return breakpointID; }
 
 protected:
-  BreakpointBase(TypeID breakpointID)
+  Breakpoint(TypeID breakpointID)
       : breakpointID(breakpointID), enableStatus(true) {}
 
   /// The type of the derived breakpoint class. This allows for detecting the
@@ -47,36 +47,36 @@ private:
   bool enableStatus;
 
   /// Allow access to `enableStatus` operations.
-  friend class BreakpointManagerBase;
+  friend class BreakpointManager;
 };
 
 /// This class represents the base class of a breakpoint manager.
-class BreakpointManagerBase {
+class BreakpointManager {
 public:
-  virtual ~BreakpointManagerBase() = default;
+  virtual ~BreakpointManager() = default;
 
   /// Return the unique breakpoint manager id of this breakpoint manager, use
   /// for casting functionality.
   TypeID getBreakpointManagerID() const { return breakpointManagerID; }
 
-  virtual BreakpointBase *addBreakpoint(StringRef tag) = 0;
+  virtual llvm::Optional<Breakpoint *> match(const DebugActionBase &action,
+                                             ArrayRef<StringRef> instanceTags,
+                                             ArrayRef<IRUnit> units) = 0;
 
-  virtual void deleteBreakpoint(BreakpointBase *breakpoint) = 0;
+  virtual Breakpoint *addBreakpoint(StringRef tag) = 0;
 
-  virtual llvm::Optional<BreakpointBase *>
-  match(const DebugActionBase &action, ArrayRef<StringRef> instanceTags,
-        ArrayRef<IRUnit> unit) = 0;
+  virtual void deleteBreakpoint(Breakpoint *breakpoint) = 0;
 
-  void enableBreakpoint(BreakpointBase *breakpoint) {
+  void enableBreakpoint(Breakpoint *breakpoint) {
     breakpoint->setEnableStatusTrue();
   }
 
-  void disableBreakpoint(BreakpointBase *breakpoint) {
+  void disableBreakpoint(Breakpoint *breakpoint) {
     breakpoint->setEnableStatusFalse();
   }
 
 protected:
-  BreakpointManagerBase(TypeID breakpointManagerID)
+  BreakpointManager(TypeID breakpointManagerID)
       : breakpointManagerID(breakpointManagerID) {}
 
   /// The type of the derived breakpoint manager class. This allows for
