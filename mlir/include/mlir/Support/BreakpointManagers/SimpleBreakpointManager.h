@@ -13,21 +13,37 @@
 #ifndef MLIR_SUPPORT_BREAKPOINTMANAGERS_SIMPLEBREAKPOINTMANAGER_H
 #define MLIR_SUPPORT_BREAKPOINTMANAGERS_SIMPLEBREAKPOINTMANAGER_H
 
+#include "mlir/Support/BreakpointManagers/BreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
 #include "llvm/ADT/MapVector.h"
 
 namespace mlir {
 
-struct SimpleBreakpoint {
+class SimpleBreakpoint : public BreakpointBase {
+public:
+  SimpleBreakpoint() : BreakpointBase(TypeID::get<SimpleBreakpoint>()) {}
+
+  SimpleBreakpoint(const std::string &_tag)
+      : BreakpointBase(TypeID::get<SimpleBreakpoint>()), tag(_tag) {}
+
+  /// Provide classof to allow casting between breakpoint types.
+  static bool classof(const BreakpointBase *breakpoint) {
+    return breakpoint->getBreakpointID() == TypeID::get<SimpleBreakpoint>();
+  }
+
+private:
+  /// A tag to associate the SimpleBreakpoint with.
   std::string tag;
-  bool enabled;
-  SimpleBreakpoint(const std::string &_tag) : tag(_tag), enabled(true) {}
+
+  /// Allow access to `tag`.
+  friend class SimpleBreakpointManager;
 };
 
-struct SimpleBreakpointManager {
+class SimpleBreakpointManager : public BreakpointManagerBase {
+public:
   llvm::Optional<SimpleBreakpoint *> match(const StringRef &tag) {
     auto it = breakpoints.find(tag);
-    if (it != breakpoints.end() && it->second->enabled) {
+    if (it != breakpoints.end() && it->second->getEnableStatus()) {
       return it->second.get();
     }
     return {};
@@ -41,10 +57,10 @@ struct SimpleBreakpointManager {
     return it->second.get();
   }
   void enableBreakpoint(SimpleBreakpoint *breakpoint) {
-    breakpoint->enabled = true;
+    breakpoint->setEnableStatusTrue();
   }
   void disableBreakpoint(SimpleBreakpoint *breakpoint) {
-    breakpoint->enabled = false;
+    breakpoint->setEnableStatusFalse();
   }
   void deleteBreakpoint(SimpleBreakpoint *breakpoint) {
     breakpoints.erase(breakpoint->tag);

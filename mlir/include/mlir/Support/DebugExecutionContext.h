@@ -44,18 +44,7 @@ public:
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
-  SimpleBreakpoint *addSimpleBreakpoint(StringRef tag) {
-    return sbm.addBreakpoint(tag);
-  }
-  void disableSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
-    sbm.disableBreakpoint(breakpoint);
-  }
-  void enableSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
-    sbm.enableBreakpoint(breakpoint);
-  }
-  void deleteSimpleBreakpoint(SimpleBreakpoint *breakpoint) {
-    sbm.deleteBreakpoint(breakpoint);
-  }
+  SimpleBreakpointManager &getSbm() { return sbm; }
 
 private:
   llvm::function_ref<DebugExecutionControl(

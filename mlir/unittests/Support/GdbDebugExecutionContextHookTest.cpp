@@ -37,7 +37,7 @@ TEST(GdbDebugExecutionContextHook, Demo) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  dbg->addSimpleBreakpoint(DebuggerAction::getTag());
+  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(GDB_RETURN, 1);
