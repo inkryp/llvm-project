@@ -41,6 +41,15 @@ private:
 
 class SimpleBreakpointManager : public BreakpointManagerBase {
 public:
+  SimpleBreakpointManager()
+      : BreakpointManagerBase(TypeID::get<SimpleBreakpointManager>()) {}
+
+  /// Provide classof to allow casting between breakpoint manager types.
+  static bool classof(const BreakpointManagerBase *breakpointManager) {
+    return breakpointManager->getBreakpointManagerID() ==
+           TypeID::get<SimpleBreakpointManager>();
+  }
+
   llvm::Optional<BreakpointBase *> match(const StringRef &tag) override {
     auto it = breakpoints.find(tag);
     if (it != breakpoints.end() && it->second->getEnableStatus()) {

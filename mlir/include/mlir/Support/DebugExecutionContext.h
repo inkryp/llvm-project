@@ -39,12 +39,24 @@ public:
           const int &, const DebugActionInformation *)>
           callback)
       : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()),
-        daiHead(nullptr) {}
+        daiHead(nullptr) {
+    registerBreakpointManager<SimpleBreakpointManager>();
+  }
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
-  SimpleBreakpointManager &getSbm() { return sbm; }
+  template <typename T>
+  void registerBreakpointManager() {
+    breakpointManagers[TypeID::get<T>()] = std::make_unique<T>();
+  }
+  template <typename T>
+  T *getBreakpointManager() {
+    return (T *)breakpointManagers[TypeID::get<T>()].get();
+  }
+  SimpleBreakpointManager *getSbm() {
+    return getBreakpointManager<SimpleBreakpointManager>();
+  }
 
 private:
   llvm::function_ref<DebugExecutionControl(
@@ -55,6 +67,7 @@ private:
   SimpleBreakpointManager &sbm;
   const DebugActionInformation *daiHead;
   Optional<int> depthToBreak;
+  DenseMap<TypeID, std::unique_ptr<BreakpointManagerBase>> breakpointManagers;
 };
 
 } // namespace mlir

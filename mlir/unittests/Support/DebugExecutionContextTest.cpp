@@ -88,9 +88,9 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
   std::vector<SimpleBreakpoint *> breakpoints;
-  breakpoints.push_back((dbg->getSbm()).addBreakpoint(DebuggerAction::getTag()));
-  breakpoints.push_back((dbg->getSbm()).addBreakpoint(OtherAction::getTag()));
-  breakpoints.push_back((dbg->getSbm()).addBreakpoint(ThirdAction::getTag()));
+  breakpoints.push_back(dbg->getSbm()->addBreakpoint(DebuggerAction::getTag()));
+  breakpoints.push_back(dbg->getSbm()->addBreakpoint(OtherAction::getTag()));
+  breakpoints.push_back(dbg->getSbm()->addBreakpoint(ThirdAction::getTag()));
 
   auto third = [&]() {
     EXPECT_EQ(current, ThirdAction::getTag());
@@ -115,7 +115,7 @@ TEST(DebugExecutionContext, DebugActionInformationTest) {
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   for (auto *breakpoint : breakpoints) {
-    (dbg->getSbm()).deleteBreakpoint(breakpoint);
+    dbg->getSbm()->deleteBreakpoint(breakpoint);
   }
 }
 
@@ -137,22 +137,22 @@ TEST(DebugExecutionContext, DebuggerTest) {
 
   EXPECT_EQ(match, 0);
 
-  auto dbgBreakpoint = (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint = dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 1);
 
-  (dbg->getSbm()).disableBreakpoint(dbgBreakpoint);
+  dbg->getSbm()->disableBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 1);
 
-  (dbg->getSbm()).enableBreakpoint(dbgBreakpoint);
+  dbg->getSbm()->enableBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 
   EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 
-  (dbg->getSbm()).deleteBreakpoint(dbgBreakpoint);
+  dbg->getSbm()->deleteBreakpoint(dbgBreakpoint);
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, noOp)));
   EXPECT_EQ(match, 2);
 }
@@ -178,7 +178,7 @@ TEST(DebugExecutionContext, ApplyTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -205,7 +205,7 @@ TEST(DebugExecutionContext, SkipTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(failed(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -238,7 +238,7 @@ TEST(DebugExecutionContext, StepApplyTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 2);
@@ -266,7 +266,7 @@ TEST(DebugExecutionContext, StepNothingInsideTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 2);
@@ -294,7 +294,7 @@ TEST(DebugExecutionContext, NextTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 2);
@@ -329,11 +329,11 @@ TEST(DebugExecutionContext, FinishTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  auto dbgBreakpoint = (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  auto dbgBreakpoint = dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 3);
-  (dbg->getSbm()).deleteBreakpoint(dbgBreakpoint);
+  dbg->getSbm()->deleteBreakpoint(dbgBreakpoint);
 }
 
 TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
@@ -364,7 +364,7 @@ TEST(DebugExecutionContext, FinishBreakpointInNestedTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(OtherAction::getTag());
+  dbg->getSbm()->addBreakpoint(OtherAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, original)));
   EXPECT_EQ(counter, 2);
@@ -391,7 +391,7 @@ TEST(DebugExecutionContext, FinishNothingBackTest) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
 
   EXPECT_TRUE(succeeded(manager.execute<DebuggerAction>({}, {}, callback)));
   EXPECT_EQ(counter, 1);
@@ -419,8 +419,8 @@ TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
   auto dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
-  (dbg->getSbm()).addBreakpoint(DebuggerAction::getTag());
-  auto toBeDisabled = (dbg->getSbm()).addBreakpoint(OtherAction::getTag());
+  dbg->getSbm()->addBreakpoint(DebuggerAction::getTag());
+  auto toBeDisabled = dbg->getSbm()->addBreakpoint(OtherAction::getTag());
 
   auto third = [&]() {
     EXPECT_EQ(counter, 2);
@@ -434,8 +434,8 @@ TEST(DebugExecutionContext, EnableDisableBreakpointOnCallback) {
   };
   auto original = [&]() {
     EXPECT_EQ(counter, 1);
-    (dbg->getSbm()).disableBreakpoint(toBeDisabled);
-    (dbg->getSbm()).addBreakpoint(ThirdAction::getTag());
+    dbg->getSbm()->disableBreakpoint(toBeDisabled);
+    dbg->getSbm()->addBreakpoint(ThirdAction::getTag());
     EXPECT_TRUE(succeeded(manager.execute<OtherAction>({}, {}, nested)));
     EXPECT_EQ(counter, 3);
     return noOp();

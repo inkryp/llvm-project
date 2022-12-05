@@ -38,7 +38,7 @@ protected:
   bool getEnableStatus() const { return enableStatus; }
 
   void setEnableStatusTrue() { enableStatus = true; }
-  
+
   void setEnableStatusFalse() { enableStatus = false; }
 
 private:
@@ -54,15 +54,32 @@ private:
 class BreakpointManagerBase {
 public:
   virtual ~BreakpointManagerBase() = default;
+
+  /// Return the unique breakpoint manager id of this breakpoint manager, use
+  /// for casting functionality.
+  TypeID getBreakpointManagerID() const { return breakpointManagerID; }
+
   virtual BreakpointBase *addBreakpoint(StringRef tag) = 0;
+
   virtual void deleteBreakpoint(BreakpointBase *breakpoint) = 0;
+
   virtual llvm::Optional<BreakpointBase *> match(const StringRef &tag) = 0;
+
   void enableBreakpoint(BreakpointBase *breakpoint) {
     breakpoint->setEnableStatusTrue();
   }
+
   void disableBreakpoint(BreakpointBase *breakpoint) {
     breakpoint->setEnableStatusFalse();
   }
+
+protected:
+  BreakpointManagerBase(TypeID breakpointManagerID)
+      : breakpointManagerID(breakpointManagerID) {}
+
+  /// The type of the derived breakpoint manager class. This allows for
+  /// detecting the specific handler of a given breakpoint type.
+  TypeID breakpointManagerID;
 };
 
 } // namespace mlir
