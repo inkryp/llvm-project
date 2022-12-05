@@ -13,6 +13,7 @@
 #ifndef MLIR_SUPPORT_DEBUGEXECUTIONCONTEXT_H
 #define MLIR_SUPPORT_DEBUGEXECUTIONCONTEXT_H
 
+#include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
 
@@ -41,6 +42,7 @@ public:
       : OnBreakpoint(callback), sbm(SimpleBreakpointManager::getGlobalSbm()),
         daiHead(nullptr) {
     registerBreakpointManager<SimpleBreakpointManager>();
+    registerBreakpointManager<RewritePatternBreakpointManager>();
   }
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
