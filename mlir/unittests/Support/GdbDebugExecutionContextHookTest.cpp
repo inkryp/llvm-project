@@ -22,7 +22,7 @@ struct DebuggerAction : public DebugAction<DebuggerAction> {
   static StringRef getDescription() { return "Test action for debug client"; }
 };
 
-ActionResult noOp() { return {nullptr, false, success()}; }
+ActionResult noOp() { return {IRUnit(), false, success()}; }
 
 TEST(GdbDebugExecutionContextHook, Demo) {
   DebugActionManager manager;

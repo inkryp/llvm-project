@@ -36,7 +36,7 @@ struct ParametricAction : DebugAction<ParametricAction, bool> {
   static StringRef getDescription() { return "param-action-description"; }
 };
 
-ActionResult noOp() { return {nullptr, false, success()}; }
+ActionResult noOp() { return {IRUnit(), false, success()}; }
 
 TEST(DebugActionTest, GenericHandler) {
   DebugActionManager manager;

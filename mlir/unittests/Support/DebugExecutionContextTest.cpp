@@ -32,7 +32,7 @@ struct ThirdAction : public DebugAction<ThirdAction> {
   static StringRef getDescription() { return "Test action for debug client"; }
 };
 
-ActionResult noOp() { return {nullptr, false, success()}; }
+ActionResult noOp() { return {IRUnit(), false, success()}; }
 
 TEST(DebugExecutionContext, DebugActionInformationTest) {
   DebugActionManager manager;
