@@ -63,10 +63,6 @@ public:
                                              ArrayRef<StringRef> instanceTags,
                                              ArrayRef<IRUnit> units) = 0;
 
-  virtual Breakpoint *addBreakpoint(StringRef tag) = 0;
-
-  virtual void deleteBreakpoint(Breakpoint *breakpoint) = 0;
-
   void enableBreakpoint(Breakpoint *breakpoint) {
     breakpoint->setEnableStatusTrue();
   }

@@ -59,7 +59,7 @@ public:
     }
     return {};
   }
-  SimpleBreakpoint *addBreakpoint(StringRef tag) override {
+  SimpleBreakpoint *addBreakpoint(StringRef tag) {
     auto result = breakpoints.insert({tag, nullptr});
     auto &it = result.first;
     if (result.second) {
@@ -67,7 +67,7 @@ public:
     }
     return it->second.get();
   }
-  void deleteBreakpoint(Breakpoint *breakpoint) override {
+  void deleteBreakpoint(Breakpoint *breakpoint) {
     auto *simpleBreakpoint = dyn_cast<SimpleBreakpoint>(breakpoint);
     breakpoints.erase(simpleBreakpoint->tag);
   }
@@ -75,6 +75,7 @@ public:
     static SimpleBreakpointManager *sbm = new SimpleBreakpointManager();
     return *sbm;
   }
+  // TODO: Change implementation so that tags don't get duplicated
   llvm::StringMap<std::unique_ptr<SimpleBreakpoint>> breakpoints;
 };
 
