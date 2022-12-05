@@ -15,6 +15,7 @@
 #define MLIR_REWRITE_PATTERNAPPLICATOR_H
 
 #include "mlir/Rewrite/FrozenRewritePatternSet.h"
+#include "mlir/Support/DebugAction.h"
 
 namespace mlir {
 class PatternRewriter;
@@ -22,6 +23,16 @@ class PatternRewriter;
 namespace detail {
 class PDLByteCodeMutableState;
 } // namespace detail
+
+struct ApplyPatternAction
+    : public DebugAction<ApplyPatternAction, const Pattern &> {
+  const Pattern &pattern;
+  ApplyPatternAction(const Pattern &pattern) : pattern(pattern) {}
+  static StringRef getTag() { return "apply-pattern-action"; }
+  static StringRef getDescription() {
+    return "Encapsulate the application of rewrite patterns";
+  }
+};
 
 /// This class manages the application of a group of rewrite patterns, with a
 /// user-provided cost model.

@@ -21,17 +21,6 @@
 using namespace mlir;
 using namespace mlir::detail;
 
-struct ApplyPatternAction
-    : public DebugAction<ApplyPatternAction, const Pattern &> {
-  MLIR_DEFINE_EXPLICIT_INTERNAL_INLINE_TYPE_ID(ApplyPatternAction)
-  const Pattern &pattern;
-  ApplyPatternAction(const Pattern &pattern) : pattern(pattern) {}
-  static StringRef getTag() { return "apply-pattern-action"; }
-  static StringRef getDescription() {
-    return "Encapsulate the application of rewrite patterns";
-  }
-};
-
 PatternApplicator::PatternApplicator(
     const FrozenRewritePatternSet &frozenPatternList)
     : frozenPatternList(frozenPatternList) {
