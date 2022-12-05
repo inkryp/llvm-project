@@ -41,14 +41,14 @@ private:
 
 class SimpleBreakpointManager : public BreakpointManagerBase {
 public:
-  llvm::Optional<SimpleBreakpoint *> match(const StringRef &tag) {
+  llvm::Optional<BreakpointBase *> match(const StringRef &tag) override {
     auto it = breakpoints.find(tag);
     if (it != breakpoints.end() && it->second->getEnableStatus()) {
       return it->second.get();
     }
     return {};
   }
-  SimpleBreakpoint *addBreakpoint(StringRef tag) {
+  SimpleBreakpoint *addBreakpoint(StringRef tag) override {
     auto result = breakpoints.insert({tag, nullptr});
     auto &it = result.first;
     if (result.second) {
@@ -56,13 +56,8 @@ public:
     }
     return it->second.get();
   }
-  void enableBreakpoint(SimpleBreakpoint *breakpoint) {
-    breakpoint->setEnableStatusTrue();
-  }
-  void disableBreakpoint(SimpleBreakpoint *breakpoint) {
-    breakpoint->setEnableStatusFalse();
-  }
-  void deleteBreakpoint(SimpleBreakpoint *breakpoint) {
+  void deleteBreakpoint(BreakpointBase *breakpointBase) override {
+    auto *breakpoint = dyn_cast<SimpleBreakpoint>(breakpointBase);
     breakpoints.erase(breakpoint->tag);
   }
   static SimpleBreakpointManager &getGlobalSbm() {

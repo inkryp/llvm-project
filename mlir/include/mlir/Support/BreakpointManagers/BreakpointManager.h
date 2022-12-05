@@ -45,12 +45,24 @@ private:
   /// The current state of the breakpoint. A breakpoint can be either enabled
   /// or disabled.
   bool enableStatus;
+
+  /// Allow access to `enableStatus` operations.
+  friend class BreakpointManagerBase;
 };
 
 /// This class represents the base class of a breakpoint manager.
 class BreakpointManagerBase {
 public:
   virtual ~BreakpointManagerBase() = default;
+  virtual BreakpointBase *addBreakpoint(StringRef tag) = 0;
+  virtual void deleteBreakpoint(BreakpointBase *breakpoint) = 0;
+  virtual llvm::Optional<BreakpointBase *> match(const StringRef &tag) = 0;
+  void enableBreakpoint(BreakpointBase *breakpoint) {
+    breakpoint->setEnableStatusTrue();
+  }
+  void disableBreakpoint(BreakpointBase *breakpoint) {
+    breakpoint->setEnableStatusFalse();
+  }
 };
 
 } // namespace mlir
