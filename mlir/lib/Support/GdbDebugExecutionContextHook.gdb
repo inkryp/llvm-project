@@ -25,10 +25,18 @@ define mlir finish
   continue
 end
 
-define mlir breakpoint
+define mlir simpleBreakpoint
   set $i = 0
   while $i < $argc
-    eval "call (void)mlirDebuggerAddBreakpoint($arg%d)", $i
+    eval "call (void)mlirDebuggerAddSimpleBreakpoint($arg%d)", $i
+    set $i = $i + 1
+  end
+end
+
+define mlir patternBreakpoint
+  set $i = 0
+  while $i < $argc
+    eval "call (void)mlirDebuggerAddRewritePatternBreakpoint($arg%d)", $i
     set $i = $i + 1
   end
 end

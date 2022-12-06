@@ -26,16 +26,14 @@ ActionResult noOp() { return {IRUnit(), false, success()}; }
 
 TEST(GdbDebugExecutionContextHook, Demo) {
   DebugActionManager manager;
-  DebugExecutionContext *dbg;
   auto onBreakpoint = [&](ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags, StringRef tag,
                           StringRef desc, const int &depth,
                           const DebugActionInformation *backtrace) {
-    return GdbOnBreakpoint(dbg);
+    return GdbOnBreakpoint();
   };
 
   auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
-  dbg = ptr.get();
   manager.registerActionHandler(std::move(ptr));
   SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
       DebuggerAction::getTag());

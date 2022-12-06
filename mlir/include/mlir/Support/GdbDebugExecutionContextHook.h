@@ -13,20 +13,22 @@
 #ifndef MLIR_SUPPORT_GDBDEBUGEXECUTIONCONTEXTHOOK_H
 #define MLIR_SUPPORT_GDBDEBUGEXECUTIONCONTEXTHOOK_H
 
-#include "llvm/Support/Compiler.h"
 #include "mlir/Support/DebugExecutionContext.h"
+#include "llvm/Support/Compiler.h"
 
 extern mlir::DebugExecutionControl GDB_RETURN;
 
 extern "C" {
 void mlirDebuggerSetControl(int controlOption);
 
-void mlirDebuggerAddBreakpoint(const char *test);
+void mlirDebuggerAddSimpleBreakpoint(const char *test);
+
+void mlirDebuggerAddRewritePatternBreakpoint(const char *test);
 }
 
 namespace mlir {
 
-LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint(DebugExecutionContext *dbg);
+LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint();
 
 } // namespace mlir
 

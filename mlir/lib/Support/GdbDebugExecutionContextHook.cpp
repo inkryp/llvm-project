@@ -18,9 +18,15 @@ void mlirDebuggerSetControl(int controlOption) {
   GDB_RETURN = static_cast<mlir::DebugExecutionControl>(controlOption);
 }
 
-void mlirDebuggerAddBreakpoint(const char *test) {
+void mlirDebuggerAddSimpleBreakpoint(const char *test) {
   auto &sbm = mlir::SimpleBreakpointManager::getGlobalInstance();
   sbm.addBreakpoint(mlir::StringRef(test));
+}
+
+void mlirDebuggerAddRewritePatternBreakpoint(const char *test) {
+  auto &breakpointManager =
+      mlir::RewritePatternBreakpointManager::getGlobalInstance();
+  breakpointManager.addBreakpoint(mlir::StringRef(test));
 }
 }
 
@@ -28,11 +34,11 @@ namespace mlir {
 
 static void *volatile sink;
 
-LLVM_ATTRIBUTE_USED DebugExecutionControl
-GdbOnBreakpoint(DebugExecutionContext *dbg) {
+LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint() {
   static bool initialized = [&]() {
     sink = (void *)mlirDebuggerSetControl;
-    sink = (void *)mlirDebuggerAddBreakpoint;
+    sink = (void *)mlirDebuggerAddSimpleBreakpoint;
+    sink = (void *)mlirDebuggerAddRewritePatternBreakpoint;
     return true;
   }();
   (void)initialized;
