@@ -132,9 +132,9 @@ public:
     actionHandlers.emplace_back(std::move(handler));
 #endif
   }
-  template <typename T>
-  void registerActionHandler() {
-    registerActionHandler(std::make_unique<T>());
+  template <typename T, typename... Args>
+  void registerActionHandler(Args &&...args) {
+    registerActionHandler(std::make_unique<T>(std::forward<Args>(args)...));
   }
 
   //===--------------------------------------------------------------------===//
@@ -151,7 +151,7 @@ public:
           llvm::function_ref<ActionResult()> transform, Args &&...args) {
     // The manager is always disabled if built without debug.
 #if !LLVM_ENABLE_ABI_BREAKING_CHECKS
-  return true;
+    return true;
 #else
     // Invoke the `execute` method on the provided handler.
     auto executeFn = [&](auto *handler, auto &&...handlerParams) {

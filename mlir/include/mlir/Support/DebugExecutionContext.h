@@ -33,8 +33,6 @@ struct DebugActionInformation {
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
-  DebugExecutionContext();
-
   DebugExecutionContext(
       llvm::function_ref<DebugExecutionControl(
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,

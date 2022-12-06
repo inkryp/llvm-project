@@ -9,16 +9,12 @@
 #include "mlir/Support/DebugExecutionContext.h"
 #include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
-#include "mlir/Support/GdbDebugExecutionContextHook.h"
 
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
 // DebugExecutionContext
 //===----------------------------------------------------------------------===//
-
-DebugExecutionContext::DebugExecutionContext()
-    : DebugExecutionContext(GdbCallBackFunction) {}
 
 DebugExecutionContext::DebugExecutionContext(
     llvm::function_ref<DebugExecutionControl(
