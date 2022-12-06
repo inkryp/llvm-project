@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/GdbDebugExecutionContextHook.h"
+#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include "gmock/gmock.h"
 #include <signal.h>
 
@@ -26,14 +27,8 @@ ActionResult noOp() { return {IRUnit(), false, success()}; }
 
 TEST(GdbDebugExecutionContextHook, Demo) {
   DebugActionManager manager;
-  auto onBreakpoint = [&](ArrayRef<IRUnit> units,
-                          ArrayRef<StringRef> instanceTags, StringRef tag,
-                          StringRef desc, const int &depth,
-                          const DebugActionInformation *backtrace) {
-    return GdbOnBreakpoint();
-  };
 
-  auto ptr = std::make_unique<DebugExecutionContext>(onBreakpoint);
+  auto ptr = std::make_unique<DebugExecutionContext>();
   manager.registerActionHandler(std::move(ptr));
   SimpleBreakpointManager::getGlobalInstance().addBreakpoint(
       DebuggerAction::getTag());

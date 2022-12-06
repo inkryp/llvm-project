@@ -13,8 +13,7 @@
 #ifndef MLIR_SUPPORT_DEBUGEXECUTIONCONTEXT_H
 #define MLIR_SUPPORT_DEBUGEXECUTIONCONTEXT_H
 
-#include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
-#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
+#include "mlir/Support/BreakpointManagers/BreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
 
 namespace mlir {
@@ -34,14 +33,14 @@ struct DebugActionInformation {
 
 class DebugExecutionContext : public DebugActionManager::GenericHandler {
 public:
+  DebugExecutionContext();
+
   DebugExecutionContext(
       llvm::function_ref<DebugExecutionControl(
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
           const int &, const DebugActionInformation *)>
-          callback)
-      : OnBreakpoint(callback), daiHead(nullptr) {
-    breakpointManagers.push_back(&SimpleBreakpointManager::getGlobalInstance());
-  }
+          callback);
+
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,

@@ -24,6 +24,7 @@
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
 #include "mlir/Support/DebugCounter.h"
+#include "mlir/Support/DebugExecutionContext.h"
 #include "mlir/Support/FileUtilities.h"
 #include "mlir/Support/Timing.h"
 #include "mlir/Support/ToolUtilities.h"
@@ -131,6 +132,8 @@ processBuffer(raw_ostream &os, std::unique_ptr<MemoryBuffer> ownedBuffer,
   if (verifyDiagnostics)
     context.printOpOnDiagnostic(false);
   context.getDebugActionManager().registerActionHandler<DebugCounter>();
+  context.getDebugActionManager()
+      .registerActionHandler<DebugExecutionContext>();
 
   // If we are in verify diagnostics mode then we have a lot of work to do,
   // otherwise just perform the actions without worrying about it.

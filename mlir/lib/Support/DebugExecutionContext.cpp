@@ -7,13 +7,29 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/DebugExecutionContext.h"
-#include "mlir/Support/BreakpointManagers/BreakpointManager.h"
+#include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
+#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
+#include "mlir/Support/GdbDebugExecutionContextHook.h"
 
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
 // DebugExecutionContext
 //===----------------------------------------------------------------------===//
+
+DebugExecutionContext::DebugExecutionContext()
+    : DebugExecutionContext(GdbCallBackFunction) {}
+
+DebugExecutionContext::DebugExecutionContext(
+    llvm::function_ref<DebugExecutionControl(
+        ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
+        const int &, const DebugActionInformation *)>
+        callback)
+    : OnBreakpoint(callback), daiHead(nullptr) {
+  breakpointManagers.push_back(&SimpleBreakpointManager::getGlobalInstance());
+  breakpointManagers.push_back(
+      &RewritePatternBreakpointManager::getGlobalInstance());
+}
 
 FailureOr<bool>
 DebugExecutionContext::execute(ArrayRef<IRUnit> units,

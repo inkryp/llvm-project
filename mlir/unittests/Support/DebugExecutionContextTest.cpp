@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/DebugExecutionContext.h"
+#include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include "llvm/ADT/MapVector.h"
 #include "gmock/gmock.h"
 

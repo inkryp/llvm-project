@@ -7,13 +7,13 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/GdbDebugExecutionContextHook.h"
+#include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include <signal.h>
 
 mlir::DebugExecutionControl GDB_RETURN = mlir::DebugExecutionControl::Apply;
 
 extern "C" {
-
 void mlirDebuggerSetControl(int controlOption) {
   GDB_RETURN = static_cast<mlir::DebugExecutionControl>(controlOption);
 }
@@ -32,9 +32,17 @@ void mlirDebuggerAddRewritePatternBreakpoint(const char *test) {
 
 namespace mlir {
 
+DebugExecutionControl
+GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+                    StringRef tag, StringRef desc, const int &depth,
+                    const DebugActionInformation *daiHead) {
+  raise(SIGTRAP);
+  return GDB_RETURN;
+}
+
 static void *volatile sink;
 
-LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint() {
+LLVM_ATTRIBUTE_USED void GdbOnBreakpoint() {
   static bool initialized = [&]() {
     sink = (void *)mlirDebuggerSetControl;
     sink = (void *)mlirDebuggerAddSimpleBreakpoint;
@@ -42,8 +50,6 @@ LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint() {
     return true;
   }();
   (void)initialized;
-  raise(SIGTRAP);
-  return GDB_RETURN;
 }
 
 } // namespace mlir

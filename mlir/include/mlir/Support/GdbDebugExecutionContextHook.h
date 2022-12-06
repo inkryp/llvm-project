@@ -28,7 +28,12 @@ void mlirDebuggerAddRewritePatternBreakpoint(const char *test);
 
 namespace mlir {
 
-LLVM_ATTRIBUTE_USED DebugExecutionControl GdbOnBreakpoint();
+DebugExecutionControl
+GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+                    StringRef something, StringRef other, const int &depth,
+                    const DebugActionInformation *daiHead);
+
+LLVM_ATTRIBUTE_USED void GdbOnBreakpoint();
 
 } // namespace mlir
 
