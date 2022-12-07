@@ -32,17 +32,12 @@ void mlirDebuggerAddRewritePatternBreakpoint(const char *test) {
 
 namespace mlir {
 
+static void *volatile sink;
+
 DebugExecutionControl
 GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
                     StringRef tag, StringRef desc, const int &depth,
                     const DebugActionInformation *daiHead) {
-  raise(SIGTRAP);
-  return GDB_RETURN;
-}
-
-static void *volatile sink;
-
-LLVM_ATTRIBUTE_USED void GdbOnBreakpoint() {
   static bool initialized = [&]() {
     sink = (void *)mlirDebuggerSetControl;
     sink = (void *)mlirDebuggerAddSimpleBreakpoint;
@@ -50,6 +45,8 @@ LLVM_ATTRIBUTE_USED void GdbOnBreakpoint() {
     return true;
   }();
   (void)initialized;
+  raise(SIGTRAP);
+  return GDB_RETURN;
 }
 
 } // namespace mlir

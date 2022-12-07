@@ -33,8 +33,6 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
                     StringRef something, StringRef other, const int &depth,
                     const DebugActionInformation *daiHead);
 
-LLVM_ATTRIBUTE_USED void GdbOnBreakpoint();
-
 } // namespace mlir
 
 #endif // MLIR_SUPPORT_GDBDEBUGEXECUTIONCONTEXTHOOK_H
