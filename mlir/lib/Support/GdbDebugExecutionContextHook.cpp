@@ -18,15 +18,17 @@ void mlirDebuggerSetControl(int controlOption) {
   GDB_RETURN = static_cast<mlir::DebugExecutionControl>(controlOption);
 }
 
-void mlirDebuggerAddSimpleBreakpoint(const char *test) {
-  auto &sbm = mlir::SimpleBreakpointManager::getGlobalInstance();
-  sbm.addBreakpoint(mlir::StringRef(test));
+void mlirDebuggerAddSimpleBreakpoint(const char *tag) {
+  auto &simpleBreakpointManager =
+      mlir::SimpleBreakpointManager::getGlobalInstance();
+  simpleBreakpointManager.addBreakpoint(mlir::StringRef(tag, strlen(tag)));
 }
 
-void mlirDebuggerAddRewritePatternBreakpoint(const char *test) {
-  auto &breakpointManager =
+void mlirDebuggerAddRewritePatternBreakpoint(const char *patternNameInfo) {
+  auto &rewritePatternBreakpointManager =
       mlir::RewritePatternBreakpointManager::getGlobalInstance();
-  breakpointManager.addBreakpoint(mlir::StringRef(test));
+  rewritePatternBreakpointManager.addBreakpoint(
+      mlir::StringRef(patternNameInfo, strlen(patternNameInfo)));
 }
 }
 
