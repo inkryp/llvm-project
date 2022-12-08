@@ -24,6 +24,9 @@ void mlirDebuggerSetControl(int controlOption);
 void mlirDebuggerAddSimpleBreakpoint(const char *tag);
 
 void mlirDebuggerAddRewritePatternBreakpoint(const char *patternNameInfo);
+
+void mlirDebuggerAddFileLineColLocBreakpoint(const char *file, unsigned line,
+                                             unsigned col);
 }
 
 namespace mlir {

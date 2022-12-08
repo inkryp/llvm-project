@@ -9,4 +9,5 @@ add_mlir_unittest(MLIRSupportTests
 )
 
 target_link_libraries(MLIRSupportTests
-  PRIVATE MLIRSupport)
+  PRIVATE MLIRSupport
+  MLIRIR)

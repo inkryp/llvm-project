@@ -40,3 +40,14 @@ define mlir patternBreakpoint
     set $i = $i + 1
   end
 end
+
+# TODO: Find a way to enforce user to have the correct types on the arguments
+define mlir locationBreakpoint
+  if $argc == 2
+    call (void)mlirDebuggerAddFileLineColLocBreakpoint($arg0, $arg1, 0)
+  else
+    if $argc == 3
+      call (void)mlirDebuggerAddFileLineColLocBreakpoint($arg0, $arg1, $arg2)
+    end
+  end
+end

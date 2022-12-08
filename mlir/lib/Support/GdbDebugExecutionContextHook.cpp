@@ -7,6 +7,7 @@
 //===----------------------------------------------------------------------===//
 
 #include "mlir/Support/GdbDebugExecutionContextHook.h"
+#include "mlir/Support/BreakpointManagers/FileLineColLocBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include <signal.h>
@@ -30,6 +31,14 @@ void mlirDebuggerAddRewritePatternBreakpoint(const char *patternNameInfo) {
   rewritePatternBreakpointManager.addBreakpoint(
       mlir::StringRef(patternNameInfo, strlen(patternNameInfo)));
 }
+
+void mlirDebuggerAddFileLineColLocBreakpoint(const char *file, unsigned line,
+                                             unsigned col) {
+  auto &fileLineColLocBreakpointManager =
+      mlir::FileLineColLocBreakpointManager::getGlobalInstance();
+  fileLineColLocBreakpointManager.addBreakpoint(
+      mlir::StringRef(file, strlen(file)), line, col);
+}
 }
 
 namespace mlir {
@@ -44,6 +53,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerSetControl;
     sink = (void *)mlirDebuggerAddSimpleBreakpoint;
     sink = (void *)mlirDebuggerAddRewritePatternBreakpoint;
+    sink = (void *)mlirDebuggerAddFileLineColLocBreakpoint;
     return true;
   }();
   (void)initialized;
