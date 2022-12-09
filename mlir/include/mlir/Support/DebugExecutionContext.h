@@ -38,20 +38,35 @@ public:
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
           const int &, const DebugActionInformation *)>
           callback);
+  ~DebugExecutionContext() override;
 
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
 
+  /// Print the counters that have been registered with this instance to the
+  /// provided output stream.
+  void print(raw_ostream &os) const;
+
+  /// Register the command line options for debug counters.
+  static void registerCLOptions();
+
 private:
+  /// Apply the registered CL options to this debug counter instance.
+  void applyCLOptions();
+
   llvm::function_ref<DebugExecutionControl(
       ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
       const int &depth, const DebugActionInformation *)>
       OnBreakpoint;
+
   int depth = 0;
+
   const DebugActionInformation *daiHead;
+
   Optional<int> depthToBreak;
+
   SmallVector<BreakpointManager *> breakpointManagers;
 };
 

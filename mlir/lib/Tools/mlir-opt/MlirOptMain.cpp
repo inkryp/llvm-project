@@ -273,6 +273,7 @@ LogicalResult mlir::MlirOptMain(int argc, char **argv, llvm::StringRef toolName,
   registerPassManagerCLOptions();
   registerDefaultTimingManagerCLOptions();
   DebugCounter::registerCLOptions();
+  DebugExecutionContext::registerCLOptions();
   PassPipelineCLParser passPipeline("", "Compiler passes to run", "p");
 
   // Build the list of dialects as a header for the --help message.
