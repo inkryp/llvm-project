@@ -55,6 +55,10 @@ public:
 
   StringRef desc;
 
+  virtual void print(raw_ostream &os) const {
+    os << "In action: `" << tag << "`\n" << desc << '\n';
+  }
+
 protected:
   DebugActionBase(TypeID actionID, StringRef tag, StringRef desc)
       : tag(tag), desc(desc), actionID(actionID) {}

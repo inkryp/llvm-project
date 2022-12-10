@@ -54,13 +54,6 @@ DebugExecutionContext::DebugExecutionContext(
   applyCLOptions();
 }
 
-DebugExecutionContext::~DebugExecutionContext() {
-  // Print information when destroyed, iff command line option is specified.
-  if (clOptions.isConstructed()) {
-    print(llvm::dbgs());
-  }
-}
-
 FailureOr<bool>
 DebugExecutionContext::execute(ArrayRef<IRUnit> units,
                                ArrayRef<StringRef> instanceTags,
@@ -115,8 +108,9 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
 }
 
 void DebugExecutionContext::print(raw_ostream &os) const {
-  // TODO: Right now the stream will always be printed when executing mlit-opt
-  // Find a way to only do so when actually using any of the defined options
+  // TODO(inkryp): Right now the stream will always be printed when executing
+  // mlit-opt.  Find a way to only do so when actually using any of the defined
+  // options
 }
 
 /// Register a set of useful command-line options that can be used to configure
@@ -131,6 +125,7 @@ void DebugExecutionContext::registerCLOptions() {
 
 // This is called by the command line parser when it sees a value for the
 // watch-at-debug-locations option defined above.
+// TODO(inkryp): Study behavior when this function gets called twice
 void DebugExecutionContext::applyCLOptions() {
   if (!clOptions.isConstructed())
     return;
@@ -141,6 +136,7 @@ void DebugExecutionContext::applyCLOptions() {
 
     // Watch at debug locations arguments are expected to be in the form:
     // `fileName:line:col`.
+    // TODO(inkryp): Clean this up. Is there a way to get the tuple right away?
     auto [locationFile, locationLineCol] = arg.split(':');
     auto [locationLineStr, locationColStr] = locationLineCol.split(':');
     if (locationLineStr.empty()) {
@@ -170,10 +166,21 @@ void DebugExecutionContext::applyCLOptions() {
           "Invalid DebugExecutionContext command-line configuration");
     }
 
-    // TODO: Check for values to be positive
+    // TODO(inkryp): Check for values to be positive
     FileLineColLocBreakpointManager &fileLineColLocBreakpointManager =
         FileLineColLocBreakpointManager::getGlobalInstance();
     fileLineColLocBreakpointManager.addBreakpoint(locationFile, locationLineInt,
                                                   locationColInt);
+  }
+
+  if (!clOptions->locations.empty()) {
+    // TODO(inkryp): All of this should exist in a callback for clients only
+    OnBreakpoint = [&](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+                       StringRef tag, StringRef desc, const int &depth,
+                       const DebugActionInformation *daiHead) {
+      // TODO(inkryp): Enable a way of specifying the output
+      daiHead->action.print(llvm::dbgs());
+      return DebugExecutionControl::Apply;
+    };
   }
 }

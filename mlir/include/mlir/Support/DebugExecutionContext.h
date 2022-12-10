@@ -38,7 +38,6 @@ public:
           ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
           const int &, const DebugActionInformation *)>
           callback);
-  ~DebugExecutionContext() override;
 
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,

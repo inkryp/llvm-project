@@ -32,6 +32,12 @@ struct ApplyPatternAction
   static StringRef getDescription() {
     return "Encapsulate the application of rewrite patterns";
   }
+  // TODO(inkryp): What else is possible to be retrieved at this point?
+  void print(raw_ostream &os) const override {
+    os << "In action `" << tag << "`\n"
+       << desc << '\n'
+       << "Attempting to apply pattern: " << pattern.getDebugName() << '\n';
+  }
 };
 
 /// This class manages the application of a group of rewrite patterns, with a
