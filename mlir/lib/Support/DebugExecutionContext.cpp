@@ -45,7 +45,7 @@ DebugExecutionContext::DebugExecutionContext(
         ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
         const int &, const DebugActionInformation *)>
         callback)
-    : OnBreakpoint(callback), daiHead(nullptr) {
+    : onBreakpointControlExecutionCallback(callback), daiHead(nullptr) {
   breakpointManagers.push_back(&SimpleBreakpointManager::getGlobalInstance());
   breakpointManagers.push_back(
       &RewritePatternBreakpointManager::getGlobalInstance());
@@ -63,8 +63,8 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
   daiHead = &info;
   ++depth;
   auto handleUserInput = [&]() -> bool {
-    auto todoNext = OnBreakpoint(units, instanceTags, action.tag, action.desc,
-                                 depth, daiHead);
+    auto todoNext = onBreakpointControlExecutionCallback(
+        units, instanceTags, action.tag, action.desc, depth, daiHead);
     switch (todoNext) {
     case DebugExecutionControl::Apply:
       depthToBreak = std::nullopt;
@@ -88,7 +88,15 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
     auto cur = breakpointManager->match(action, instanceTags, units);
     if (cur) {
       breakpoint = cur;
+      // TODO(inkryp): Most of the times we only want to check if there is one.
+      // However that is not always the case. How should we handle the existance
+      // of multiple breakpoints?
+      break;
     }
+  }
+  // For now implement it with breakpoint
+  for (auto &onClientCallback : clientCallbacks) {
+    onClientCallback(units, instanceTags, daiHead, depth, breakpoint);
   }
   bool apply = true;
   if (breakpoint || (depthToBreak && depth <= depthToBreak)) {
@@ -105,12 +113,6 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
   --depth;
   daiHead = info.prev;
   return apply;
-}
-
-void DebugExecutionContext::print(raw_ostream &os) const {
-  // TODO(inkryp): Right now the stream will always be printed when executing
-  // mlit-opt.  Find a way to only do so when actually using any of the defined
-  // options
 }
 
 /// Register a set of useful command-line options that can be used to configure
@@ -174,13 +176,22 @@ void DebugExecutionContext::applyCLOptions() {
   }
 
   if (!clOptions->locations.empty()) {
-    // TODO(inkryp): All of this should exist in a callback for clients only
-    OnBreakpoint = [&](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
-                       StringRef tag, StringRef desc, const int &depth,
-                       const DebugActionInformation *daiHead) {
-      // TODO(inkryp): Enable a way of specifying the output
-      daiHead->action.print(llvm::dbgs());
-      return DebugExecutionControl::Apply;
+    // TODO(inkryp): This is still a client that exists on DEC. This should be
+    // its own client
+    auto callback = [&](ArrayRef<IRUnit> units,
+                        ArrayRef<StringRef> instanceTags,
+                        const DebugActionInformation *daiHead, const int &depth,
+                        llvm::Optional<Breakpoint *> breakpoint) {
+      // TODO(inkryp): This is slightly wrong as it is technically possible that
+      // two breakpoint of different types matched at the same time and
+      // therefore the one that we are receiving might no be a
+      // `FileLineColLocBreakpoint`. Find a work around or address this in a
+      // different way. Should we match in here as well?
+      if (breakpoint && llvm::isa<FileLineColLocBreakpoint>(*breakpoint)) {
+        // TODO(inkryp): Enable a way of specifying the output
+        daiHead->action.print(llvm::dbgs());
+      }
     };
+    clientCallbacks.push_back(callback);
   }
 }

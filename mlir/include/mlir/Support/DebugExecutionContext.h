@@ -44,10 +44,6 @@ public:
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
 
-  /// Print the counters that have been registered with this instance to the
-  /// provided output stream.
-  void print(raw_ostream &os) const;
-
   /// Register the command line options for debug counters.
   static void registerCLOptions();
 
@@ -56,9 +52,9 @@ private:
   void applyCLOptions();
 
   llvm::function_ref<DebugExecutionControl(
-      ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
-      const int &depth, const DebugActionInformation *)>
-      OnBreakpoint;
+      ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef, const int &,
+      const DebugActionInformation *)>
+      onBreakpointControlExecutionCallback;
 
   int depth = 0;
 
@@ -67,6 +63,11 @@ private:
   Optional<int> depthToBreak;
 
   SmallVector<BreakpointManager *> breakpointManagers;
+
+  SmallVector<llvm::function_ref<void(
+      ArrayRef<IRUnit>, ArrayRef<StringRef>, const DebugActionInformation *,
+      const int &, llvm::Optional<Breakpoint *>)>>
+      clientCallbacks;
 };
 
 } // namespace mlir
