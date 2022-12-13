@@ -39,18 +39,17 @@ public:
           const int &, const DebugActionInformation *)>
           callback);
 
+  void registerCallback(
+      llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
+                              const DebugActionInformation *, const int &,
+                              llvm::Optional<Breakpoint *>)>);
+
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
                           llvm::function_ref<ActionResult()> transform,
                           const DebugActionBase &action) final;
 
-  /// Register the command line options for debug counters.
-  static void registerCLOptions();
-
 private:
-  /// Apply the registered CL options to this debug counter instance.
-  void applyCLOptions();
-
   llvm::function_ref<DebugExecutionControl(
       ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef, const int &,
       const DebugActionInformation *)>
