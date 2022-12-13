@@ -30,12 +30,8 @@ DebugExecutionContext::DebugExecutionContext(
       &FileLineColLocBreakpointManager::getGlobalInstance());
 }
 
-void DebugExecutionContext::registerCallback(
-    llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
-                            const DebugActionInformation *, const int &,
-                            llvm::Optional<Breakpoint *>)>
-        callback) {
-  clientCallbacks.push_back(callback);
+void DebugExecutionContext::registerObserver(Observer *observer) {
+  observers.push_back(observer);
 }
 
 FailureOr<bool>
@@ -79,8 +75,9 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
     }
   }
   // For now implement it with breakpoint
-  for (auto &onClientCallback : clientCallbacks) {
-    onClientCallback(units, instanceTags, daiHead, depth, breakpoint);
+  for (auto *observer : observers) {
+    observer->onCallbackBeforeExecution(units, instanceTags, daiHead, depth,
+                                        breakpoint);
   }
   bool apply = true;
   if (breakpoint || (depthToBreak && depth <= depthToBreak)) {

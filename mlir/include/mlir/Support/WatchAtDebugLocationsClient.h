@@ -9,29 +9,24 @@
 #ifndef MLIR_SUPPORT_WATCHATDEBUGLOCATIONSCLIENT_H
 #define MLIR_SUPPORT_WATCHATDEBUGLOCATIONSCLIENT_H
 
+#include "mlir/Support/BreakpointManagers/FileLineColLocBreakpointManager.h"
 #include "mlir/Support/DebugExecutionContext.h"
 
 namespace mlir {
 
 /// TODO(inkryp): Write a description of the service.
-class WatchAtDebugLocationsClient {
+class WatchAtDebugLocationsClient : public DebugExecutionContext::Observer {
 public:
-  WatchAtDebugLocationsClient(DebugExecutionContext *);
+  WatchAtDebugLocationsClient();
 
   /// Register the command line options for location breakpoints.
   static void registerCLOptions();
 
-  void attachToDebugExecutionContext(DebugExecutionContext *);
-
 private:
-  /// Apply the registered CL options to this watch at debug locations client
-  /// instance.
-  void applyCLOptions(DebugExecutionContext *);
+  /// TODO(inkryp): Write a description for this method.
+  void applyCLOptions();
 
-  llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
-                          const DebugActionInformation *, const int &,
-                          llvm::Optional<Breakpoint *>)>
-      callback;
+  FileLineColLocBreakpointManager breakpointManager;
 };
 
 } // namespace mlir

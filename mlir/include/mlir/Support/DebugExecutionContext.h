@@ -39,10 +39,27 @@ public:
           const int &, const DebugActionInformation *)>
           callback);
 
-  void registerCallback(
-      llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
-                              const DebugActionInformation *, const int &,
-                              llvm::Optional<Breakpoint *>)>);
+  struct Observer {
+    Observer(
+        llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
+                                const DebugActionInformation *, const int &,
+                                llvm::Optional<Breakpoint *>)>
+            onCallbackBeforeExecution =
+                [](ArrayRef<IRUnit>, ArrayRef<StringRef>,
+                   const DebugActionInformation *, const int &,
+                   llvm::Optional<Breakpoint *>) {},
+        llvm::function_ref<void(ActionResult)> onCallbackAfterExecution =
+            [](ActionResult) {})
+        : onCallbackBeforeExecution(onCallbackBeforeExecution),
+          onCallbackAfterExecution(onCallbackAfterExecution) {}
+    llvm::function_ref<void(ArrayRef<IRUnit>, ArrayRef<StringRef>,
+                            const DebugActionInformation *, const int &,
+                            llvm::Optional<Breakpoint *>)>
+        onCallbackBeforeExecution;
+    llvm::function_ref<void(ActionResult)> onCallbackAfterExecution;
+  };
+
+  void registerObserver(Observer *);
 
   FailureOr<bool> execute(ArrayRef<IRUnit> units,
                           ArrayRef<StringRef> instanceTags,
@@ -63,10 +80,7 @@ private:
 
   SmallVector<BreakpointManager *> breakpointManagers;
 
-  SmallVector<llvm::function_ref<void(
-      ArrayRef<IRUnit>, ArrayRef<StringRef>, const DebugActionInformation *,
-      const int &, llvm::Optional<Breakpoint *>)>>
-      clientCallbacks;
+  SmallVector<Observer *> observers;
 };
 
 } // namespace mlir

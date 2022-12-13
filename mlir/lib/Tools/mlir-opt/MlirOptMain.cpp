@@ -137,7 +137,8 @@ processBuffer(raw_ostream &os, std::unique_ptr<MemoryBuffer> ownedBuffer,
   auto ptr = std::make_unique<DebugExecutionContext>(GdbCallBackFunction);
   auto debugger = ptr.get();
   context.getDebugActionManager().registerActionHandler(std::move(ptr));
-  WatchAtDebugLocationsClient client(debugger);
+  WatchAtDebugLocationsClient client;
+  debugger->registerObserver(&client);
 
   // If we are in verify diagnostics mode then we have a lot of work to do,
   // otherwise just perform the actions without worrying about it.

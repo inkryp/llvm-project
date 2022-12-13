@@ -39,10 +39,8 @@ static llvm::ManagedStatic<WatchAtDebugLocationsClientOptions> clOptions;
 // WatchAtDebugLocationsClient
 //===----------------------------------------------------------------------===//
 
-WatchAtDebugLocationsClient::WatchAtDebugLocationsClient(
-    DebugExecutionContext *handler)
-    : callback() {
-  applyCLOptions(handler);
+WatchAtDebugLocationsClient::WatchAtDebugLocationsClient() : Observer() {
+  applyCLOptions();
 }
 
 /// Register a set of useful command-line options that can be used to configure
@@ -55,16 +53,10 @@ void WatchAtDebugLocationsClient::registerCLOptions() {
 #endif
 }
 
-void WatchAtDebugLocationsClient::attachToDebugExecutionContext(
-    DebugExecutionContext *handler) {
-  handler->registerCallback(callback);
-}
-
 // This is called by the command line parser when it sees a value for the
 // watch-at-debug-locations option defined above.
 // TODO(inkryp): Study behavior when this function gets called twice
-void WatchAtDebugLocationsClient::applyCLOptions(
-    DebugExecutionContext *handler) {
+void WatchAtDebugLocationsClient::applyCLOptions() {
   if (!clOptions.isConstructed())
     return;
 
@@ -107,28 +99,22 @@ void WatchAtDebugLocationsClient::applyCLOptions(
     }
 
     // TODO(inkryp): Check for values to be positive
-    FileLineColLocBreakpointManager &fileLineColLocBreakpointManager =
-        FileLineColLocBreakpointManager::getGlobalInstance();
-    fileLineColLocBreakpointManager.addBreakpoint(locationFile, locationLineInt,
-                                                  locationColInt);
+    breakpointManager.addBreakpoint(locationFile, locationLineInt,
+                                    locationColInt);
   }
 
   if (!clOptions->locations.empty()) {
-    // TODO(inkryp): This is still a client that exists on DEC. This should be
-    // its own client
-    callback = [&](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
-                   const DebugActionInformation *daiHead, const int &depth,
-                   llvm::Optional<Breakpoint *> breakpoint) {
-      // TODO(inkryp): This is slightly wrong as it is technically possible that
-      // two breakpoint of different types matched at the same time and
-      // therefore the one that we are receiving might no be a
-      // `FileLineColLocBreakpoint`. Find a work around or address this in a
-      // different way. Should we match in here as well?
-      if (breakpoint && llvm::isa<FileLineColLocBreakpoint>(*breakpoint)) {
-        // TODO(inkryp): Enable a way of specifying the output
-        daiHead->action.print(llvm::dbgs());
-      }
-    };
-    attachToDebugExecutionContext(handler);
+    static auto observeLocationFunc =
+        [this](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+               const DebugActionInformation *daiHead, const int &depth,
+               llvm::Optional<Breakpoint *> breakpoint) {
+          auto match =
+              breakpointManager.match(daiHead->action, instanceTags, units);
+          if (match) {
+            // TODO(inkryp): Enable a way of specifying the output
+            daiHead->action.print(llvm::dbgs());
+          }
+        };
+    onCallbackBeforeExecution = observeLocationFunc;
   }
 }
