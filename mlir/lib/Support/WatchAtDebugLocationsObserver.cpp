@@ -102,19 +102,15 @@ void WatchAtDebugLocationsObserver::applyCLOptions() {
     breakpointManager.addBreakpoint(locationFile, locationLineInt,
                                     locationColInt);
   }
+}
 
-  if (!clOptions->locations.empty()) {
-    static auto observeLocationFunc =
-        [this](ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
-               const DebugActionInformation *daiHead, const int &depth,
-               llvm::Optional<Breakpoint *> breakpoint) {
-          auto match =
-              breakpointManager.match(daiHead->action, instanceTags, units);
-          if (match) {
-            // TODO(inkryp): Enable a way of specifying the output
-            daiHead->action.print(llvm::dbgs());
-          }
-        };
-    onCallbackBeforeExecution = observeLocationFunc;
+void WatchAtDebugLocationsObserver::onCallbackBeforeExecution(
+    ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
+    const DebugActionInformation *daiHead, const int &depth,
+    llvm::Optional<Breakpoint *> breakpoint) {
+  auto match = breakpointManager.match(daiHead->action, instanceTags, units);
+  if (match) {
+    // TODO(inkryp): Enable a way of specifying the output
+    daiHead->action.print(llvm::dbgs());
   }
 }

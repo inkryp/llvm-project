@@ -26,6 +26,10 @@ private:
   /// TODO(inkryp): Write a description for this method.
   void applyCLOptions();
 
+  void onCallbackBeforeExecution(ArrayRef<IRUnit>, ArrayRef<StringRef>,
+                                 const DebugActionInformation *, const int &,
+                                 llvm::Optional<Breakpoint *>) override;
+
   FileLineColLocBreakpointManager breakpointManager;
 };
 
