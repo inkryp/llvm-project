@@ -1,4 +1,4 @@
-//===- WatchAtDebugLocationsClient.cpp - CL Client for location breakpoint ===//
+//===- WatchAtDebugLocationsObserver.cpp - Location breakpoint Observer ---===//
 //
 // Part of the LLVM Project, under the Apache License v2.0 with LLVM Exceptions.
 // See https://llvm.org/LICENSE.txt for license information.
@@ -6,7 +6,7 @@
 //
 //===----------------------------------------------------------------------===//
 
-#include "mlir/Support/WatchAtDebugLocationsClient.h"
+#include "mlir/Support/WatchAtDebugLocationsObserver.h"
 #include "mlir/Support/BreakpointManagers/FileLineColLocBreakpointManager.h"
 #include "mlir/Support/DebugExecutionContext.h"
 #include "mlir/Support/FileUtilities.h"
@@ -18,14 +18,14 @@
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
-// WatchAtDebugLocationsClientOptions CommandLine Options
+// WatchAtDebugLocationsObserverOptions CommandLine Options
 //===----------------------------------------------------------------------===//
 
 namespace {
 /// This struct contains command line options that can be used to initialize
 /// various bits of a DebugExecutionContext. This uses a struct wrapper to avoid
 /// the need for global command line options.
-struct WatchAtDebugLocationsClientOptions {
+struct WatchAtDebugLocationsObserverOptions {
   llvm::cl::list<std::string> locations{
       "watch-at-debug-locations",
       llvm::cl::desc("Comma separated list of location arguments"),
@@ -33,20 +33,20 @@ struct WatchAtDebugLocationsClientOptions {
 };
 } // namespace
 
-static llvm::ManagedStatic<WatchAtDebugLocationsClientOptions> clOptions;
+static llvm::ManagedStatic<WatchAtDebugLocationsObserverOptions> clOptions;
 
 //===----------------------------------------------------------------------===//
-// WatchAtDebugLocationsClient
+// WatchAtDebugLocationsObserver
 //===----------------------------------------------------------------------===//
 
-WatchAtDebugLocationsClient::WatchAtDebugLocationsClient() : Observer() {
+WatchAtDebugLocationsObserver::WatchAtDebugLocationsObserver() : Observer() {
   applyCLOptions();
 }
 
 /// Register a set of useful command-line options that can be used to configure
 /// various flags within the DebugCounter. These flags are used when
 /// constructing a DebugCounter for initialization.
-void WatchAtDebugLocationsClient::registerCLOptions() {
+void WatchAtDebugLocationsObserver::registerCLOptions() {
 #ifndef NDEBUG
   // Make sure that the options struct has been initialized.
   *clOptions;
@@ -56,7 +56,7 @@ void WatchAtDebugLocationsClient::registerCLOptions() {
 // This is called by the command line parser when it sees a value for the
 // watch-at-debug-locations option defined above.
 // TODO(inkryp): Study behavior when this function gets called twice
-void WatchAtDebugLocationsClient::applyCLOptions() {
+void WatchAtDebugLocationsObserver::applyCLOptions() {
   if (!clOptions.isConstructed())
     return;
 
@@ -71,31 +71,31 @@ void WatchAtDebugLocationsClient::applyCLOptions() {
     auto [locationLineStr, locationColStr] = locationLineCol.split(':');
     if (locationLineStr.empty()) {
       llvm::errs()
-          << "error: expected WatchAtDebugLocationsClient argument to have "
+          << "error: expected WatchAtDebugLocationsObserver argument to have "
              "a `:` separating the file name and the line and column, "
              "but provided argument was : "
           << arg << "`\n";
       llvm::report_fatal_error(
-          "Invalid WatchAtDebugLocationsClient command-line configuration");
+          "Invalid WatchAtDebugLocationsObserver command-line configuration");
     }
 
     // Extract the line and column value
     int64_t locationLineInt, locationColInt;
     if (locationLineStr.getAsInteger(0, locationLineInt)) {
       llvm::errs()
-          << "error: expected WatchAtDebugLocationsClient line value to be "
+          << "error: expected WatchAtDebugLocationsObserver line value to be "
              "numeric, but got `"
           << locationLineStr << "`\n";
       llvm::report_fatal_error(
-          "Invalid WatchAtDebugLocationsClient command-line configuration");
+          "Invalid WatchAtDebugLocationsObserver command-line configuration");
     }
     if (locationColStr.getAsInteger(0, locationColInt)) {
       llvm::errs()
-          << "error: expected WatchAtDebugLocationsClient column value to be "
+          << "error: expected WatchAtDebugLocationsObserver column value to be "
              "numeric, but got `"
           << locationColStr << "`\n";
       llvm::report_fatal_error(
-          "Invalid WatchAtDebugLocationsClient command-line configuration");
+          "Invalid WatchAtDebugLocationsObserver command-line configuration");
     }
 
     // TODO(inkryp): Check for values to be positive

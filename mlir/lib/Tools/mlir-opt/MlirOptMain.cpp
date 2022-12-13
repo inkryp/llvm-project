@@ -29,7 +29,7 @@
 #include "mlir/Support/GdbDebugExecutionContextHook.h"
 #include "mlir/Support/Timing.h"
 #include "mlir/Support/ToolUtilities.h"
-#include "mlir/Support/WatchAtDebugLocationsClient.h"
+#include "mlir/Support/WatchAtDebugLocationsObserver.h"
 #include "mlir/Tools/ParseUtilities.h"
 #include "llvm/Support/CommandLine.h"
 #include "llvm/Support/FileUtilities.h"
@@ -137,8 +137,8 @@ processBuffer(raw_ostream &os, std::unique_ptr<MemoryBuffer> ownedBuffer,
   auto ptr = std::make_unique<DebugExecutionContext>(GdbCallBackFunction);
   auto debugger = ptr.get();
   context.getDebugActionManager().registerActionHandler(std::move(ptr));
-  WatchAtDebugLocationsClient client;
-  debugger->registerObserver(&client);
+  WatchAtDebugLocationsObserver watchAtDebugLocationsObserver;
+  debugger->registerObserver(&watchAtDebugLocationsObserver);
 
   // If we are in verify diagnostics mode then we have a lot of work to do,
   // otherwise just perform the actions without worrying about it.
@@ -277,7 +277,7 @@ LogicalResult mlir::MlirOptMain(int argc, char **argv, llvm::StringRef toolName,
   registerPassManagerCLOptions();
   registerDefaultTimingManagerCLOptions();
   DebugCounter::registerCLOptions();
-  WatchAtDebugLocationsClient::registerCLOptions();
+  WatchAtDebugLocationsObserver::registerCLOptions();
   PassPipelineCLParser passPipeline("", "Compiler passes to run", "p");
 
   // Build the list of dialects as a header for the --help message.

@@ -9,7 +9,7 @@ set(LLVM_OPTIONAL_SOURCES
   Timing.cpp
   ToolUtilities.cpp
   TypeID.cpp
-  WatchAtDebugLocationsClient.cpp
+  WatchAtDebugLocationsObserver.cpp
 )
 
 add_mlir_library(MLIRSupport
@@ -23,7 +23,7 @@ add_mlir_library(MLIRSupport
   Timing.cpp
   ToolUtilities.cpp
   TypeID.cpp
-  WatchAtDebugLocationsClient.cpp
+  WatchAtDebugLocationsObserver.cpp
 
   ADDITIONAL_HEADER_DIRS
   ${MLIR_MAIN_INCLUDE_DIR}/mlir/Support
