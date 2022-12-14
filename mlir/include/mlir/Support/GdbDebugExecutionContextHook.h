@@ -16,8 +16,6 @@
 #include "mlir/Support/DebugExecutionContext.h"
 #include "llvm/Support/Compiler.h"
 
-extern mlir::DebugExecutionControl GDB_RETURN;
-
 extern "C" {
 void mlirDebuggerSetControl(int controlOption);
 

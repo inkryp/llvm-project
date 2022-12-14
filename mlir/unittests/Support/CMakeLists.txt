@@ -3,7 +3,6 @@ add_mlir_unittest(MLIRSupportTests
   DebugCounterTest.cpp
   DebugExecutionContextTest.cpp
   FileLineColLocBreakpointManagerTest.cpp
-  GdbDebugExecutionContextHookTest.cpp
   IndentedOstreamTest.cpp
   MathExtrasTest.cpp
   StorageUniquerTest.cpp
