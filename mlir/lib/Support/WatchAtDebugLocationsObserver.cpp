@@ -26,6 +26,9 @@ namespace {
 /// various bits of a DebugExecutionContext. This uses a struct wrapper to avoid
 /// the need for global command line options.
 struct WatchAtDebugLocationsObserverOptions {
+  llvm::cl::opt<std::string> outputFilename{
+      "dump-rewrites-at-debug-locations", llvm::cl::desc("Output filename"),
+      llvm::cl::value_desc("filename"), llvm::cl::init("-")};
   llvm::cl::list<std::string> locations{
       "watch-at-debug-locations",
       llvm::cl::desc("Comma separated list of location arguments"),
@@ -41,6 +44,13 @@ static llvm::ManagedStatic<WatchAtDebugLocationsObserverOptions> clOptions;
 
 WatchAtDebugLocationsObserver::WatchAtDebugLocationsObserver() : Observer() {
   applyCLOptions();
+}
+
+WatchAtDebugLocationsObserver::~WatchAtDebugLocationsObserver() {
+  // Keep the output file if the invocation of MlirOptMain was successful.
+  if (outputFile) {
+    outputFile->keep();
+  }
 }
 
 /// Register a set of useful command-line options that can be used to configure
@@ -59,6 +69,13 @@ void WatchAtDebugLocationsObserver::registerCLOptions() {
 void WatchAtDebugLocationsObserver::applyCLOptions() {
   if (!clOptions.isConstructed())
     return;
+
+  // Set up the output file.
+  std::string errorMessage;
+  outputFile = openOutputFile(clOptions->outputFilename, &errorMessage);
+  if (!outputFile) {
+    llvm::errs() << errorMessage << "\n";
+  }
 
   for (StringRef arg : clOptions->locations) {
     if (arg.empty())
@@ -110,7 +127,10 @@ void WatchAtDebugLocationsObserver::onCallbackBeforeExecution(
     llvm::Optional<Breakpoint *> breakpoint) {
   auto match = breakpointManager.match(daiHead->action, instanceTags, units);
   if (match) {
-    // TODO(inkryp): Enable a way of specifying the output
-    daiHead->action.print(llvm::dbgs());
+    if (outputFile) {
+      daiHead->action.print(outputFile->os());
+    } else {
+      daiHead->action.print(llvm::dbgs());
+    }
   }
 }

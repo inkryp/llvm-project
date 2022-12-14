@@ -11,6 +11,7 @@
 
 #include "mlir/Support/BreakpointManagers/FileLineColLocBreakpointManager.h"
 #include "mlir/Support/DebugExecutionContext.h"
+#include "llvm/Support/ToolOutputFile.h"
 
 namespace mlir {
 
@@ -18,6 +19,7 @@ namespace mlir {
 class WatchAtDebugLocationsObserver : public DebugExecutionContext::Observer {
 public:
   WatchAtDebugLocationsObserver();
+  ~WatchAtDebugLocationsObserver();
 
   /// Register the command line options for location breakpoints.
   static void registerCLOptions();
@@ -31,6 +33,8 @@ private:
                                  llvm::Optional<Breakpoint *>) override;
 
   FileLineColLocBreakpointManager breakpointManager;
+
+  std::unique_ptr<llvm::ToolOutputFile> outputFile = nullptr;
 };
 
 } // namespace mlir
