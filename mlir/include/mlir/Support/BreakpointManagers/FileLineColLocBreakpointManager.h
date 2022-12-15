@@ -105,17 +105,21 @@ public:
     return it->second.get();
   }
 
-  void deleteBreakpoint(Breakpoint *breakpoint) {
+  bool deleteBreakpoint(Breakpoint *breakpoint) override {
     if (auto *fileLineColLocBreakpoint =
             dyn_cast<FileLineColLocBreakpoint>(breakpoint)) {
-      deleteBreakpoint(fileLineColLocBreakpoint->file,
-                       fileLineColLocBreakpoint->line,
-                       fileLineColLocBreakpoint->col);
+      auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+      auto successfullyDeleted = mp.erase(breakpoint->getBreakpointID());
+      successfullyDeleted &= deleteBreakpoint(fileLineColLocBreakpoint->file,
+                                              fileLineColLocBreakpoint->line,
+                                              fileLineColLocBreakpoint->col);
+      return successfullyDeleted;
     }
+    return false;
   }
 
-  void deleteBreakpoint(std::string file, unsigned line, unsigned col) {
-    breakpoints.erase(std::make_tuple(StringRef(file), line, col));
+  bool deleteBreakpoint(std::string file, unsigned line, unsigned col) {
+    return breakpoints.erase(std::make_tuple(StringRef(file), line, col));
   }
 
   static FileLineColLocBreakpointManager &getGlobalInstance() {

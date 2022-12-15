@@ -88,10 +88,15 @@ public:
     return it->second.get();
   }
 
-  void deleteBreakpoint(Breakpoint *breakpoint) {
-    auto *rewritePatternBreakpoint =
-        dyn_cast<RewritePatternBreakpoint>(breakpoint);
-    breakpoints.erase(rewritePatternBreakpoint->patternNameInfo);
+  bool deleteBreakpoint(Breakpoint *breakpoint) override {
+    if (auto *rewritePatternBreakpoint =
+            dyn_cast<RewritePatternBreakpoint>(breakpoint)) {
+      auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+      auto successfullyDeleted = mp.erase(breakpoint->getBreakpointID());
+      return successfullyDeleted &&
+             breakpoints.erase(rewritePatternBreakpoint->patternNameInfo);
+    }
+    return false;
   }
 
   static RewritePatternBreakpointManager &getGlobalInstance() {

@@ -73,9 +73,13 @@ public:
     }
     return it->second.get();
   }
-  void deleteBreakpoint(Breakpoint *breakpoint) {
-    auto *simpleBreakpoint = dyn_cast<SimpleBreakpoint>(breakpoint);
-    breakpoints.erase(simpleBreakpoint->tag);
+  bool deleteBreakpoint(Breakpoint *breakpoint) override {
+    if (auto *simpleBreakpoint = dyn_cast<SimpleBreakpoint>(breakpoint)) {
+      auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+      auto successfullyDeleted = mp.erase(breakpoint->getBreakpointID());
+      return successfullyDeleted && breakpoints.erase(simpleBreakpoint->tag);
+    }
+    return false;
   }
   static SimpleBreakpointManager &getGlobalInstance() {
     static SimpleBreakpointManager *sbm = new SimpleBreakpointManager();

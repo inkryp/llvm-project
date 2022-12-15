@@ -78,6 +78,8 @@ public:
     breakpoint->setEnableStatusFalse();
   }
 
+  virtual bool deleteBreakpoint(Breakpoint *) = 0;
+
 protected:
   BreakpointManager(TypeID breakpointManagerID)
       : breakpointManagerID(breakpointManagerID) {}
