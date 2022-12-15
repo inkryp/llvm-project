@@ -11,6 +11,15 @@
 #include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 
+llvm::SmallVector<mlir::BreakpointManager *> &
+getGlobalInstancesOfBreakpointManagers() {
+  static llvm::SmallVector<mlir::BreakpointManager *> breakpointManagers = {
+      &mlir::FileLineColLocBreakpointManager::getGlobalInstance(),
+      &mlir::RewritePatternBreakpointManager::getGlobalInstance(),
+      &mlir::SimpleBreakpointManager::getGlobalInstance()};
+  return breakpointManagers;
+}
+
 using namespace mlir;
 
 //===----------------------------------------------------------------------===//
@@ -22,13 +31,7 @@ DebugExecutionContext::DebugExecutionContext(
         ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef, StringRef,
         const int &, const DebugActionInformation *)>
         callback)
-    : onBreakpointControlExecutionCallback(callback), daiHead(nullptr) {
-  breakpointManagers.push_back(&SimpleBreakpointManager::getGlobalInstance());
-  breakpointManagers.push_back(
-      &RewritePatternBreakpointManager::getGlobalInstance());
-  breakpointManagers.push_back(
-      &FileLineColLocBreakpointManager::getGlobalInstance());
-}
+    : onBreakpointControlExecutionCallback(callback), daiHead(nullptr) {}
 
 void DebugExecutionContext::registerObserver(Observer *observer) {
   observers.push_back(observer);
@@ -64,7 +67,7 @@ DebugExecutionContext::execute(ArrayRef<IRUnit> units,
     }
   };
   llvm::Optional<Breakpoint *> breakpoint;
-  for (auto *breakpointManager : breakpointManagers) {
+  for (auto *breakpointManager : getGlobalInstancesOfBreakpointManagers()) {
     auto cur = breakpointManager->match(action, instanceTags, units);
     if (cur) {
       breakpoint = cur;

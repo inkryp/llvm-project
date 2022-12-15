@@ -16,6 +16,11 @@
 #include "mlir/Support/BreakpointManagers/BreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
 
+// TODO(inkryp): Should this value be protected?
+// TODO(inkryp): Should the user dynamically register `BreakpointManager`?
+extern llvm::SmallVector<mlir::BreakpointManager *> &
+getGlobalInstancesOfBreakpointManagers();
+
 namespace mlir {
 
 enum DebugExecutionControl {
@@ -69,8 +74,6 @@ private:
   const DebugActionInformation *daiHead;
 
   Optional<int> depthToBreak;
-
-  SmallVector<BreakpointManager *> breakpointManagers;
 
   SmallVector<Observer *> observers;
 };
