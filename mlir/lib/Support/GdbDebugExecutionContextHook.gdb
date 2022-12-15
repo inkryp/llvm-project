@@ -51,3 +51,20 @@ define mlir locationBreakpoint
     end
   end
 end
+
+# TODO: Support parsing to a string to represent a range.
+define mlir deleteBreakpoint
+  if $argc == 1
+    # In the original signature of `mlirDebuggerDeleteBreakpoint` it returns a
+    # `bool`. However, inside the call to SIGTRAP our program might end on a C
+    # context. As `bool` is not a C type, we have to cast it to something
+    # supported, in this case `int` and then do the conversion with bitwise
+    # operations to have the behavior of a `bool`.
+    # TODO: Find a way to retrieve the bool value directly.
+    set $mlirDebuggerDeleteBreakpointResult = \
+        ((int (*)(unsigned))mlirDebuggerDeleteBreakpoint)($arg0)
+    if !($mlirDebuggerDeleteBreakpointResult & 1)
+      printf "Could not find Breakpoint with ID %d\n", $arg0
+    end
+  end
+end
