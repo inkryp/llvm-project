@@ -25,6 +25,10 @@ void mlirDebuggerAddRewritePatternBreakpoint(const char *patternNameInfo);
 
 void mlirDebuggerAddFileLineColLocBreakpoint(const char *file, unsigned line,
                                              unsigned col);
+
+/// Deletes a breakpoint based on its ID. True indicates a value was deleted.
+/// When deleting is agnostic of the specific type of `Breakpoint`.
+bool mlirDebuggerDeleteBreakpoint(unsigned id);
 }
 
 namespace mlir {

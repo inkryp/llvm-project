@@ -10,6 +10,7 @@
 #include "mlir/Support/BreakpointManagers/FileLineColLocBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
+#include "mlir/Support/DebugExecutionContext.h"
 #include <signal.h>
 
 mlir::DebugExecutionControl GDB_RETURN = mlir::DebugExecutionControl::Apply;
@@ -39,6 +40,18 @@ void mlirDebuggerAddFileLineColLocBreakpoint(const char *file, unsigned line,
   fileLineColLocBreakpointManager.addBreakpoint(
       mlir::StringRef(file, strlen(file)), line, col);
 }
+
+bool mlirDebuggerDeleteBreakpoint(unsigned breakpointID) {
+  auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+  auto it = mp.find(breakpointID);
+  if (it != mp.end()) {
+    auto &breakpointInstanceById = it->second;
+    auto *breakpoint = std::get<0>(breakpointInstanceById);
+    auto &breakpointManager = std::get<1>(breakpointInstanceById);
+    return breakpointManager.deleteBreakpoint(breakpoint);
+  }
+  return false;
+}
 }
 
 namespace mlir {
@@ -54,6 +67,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerAddSimpleBreakpoint;
     sink = (void *)mlirDebuggerAddRewritePatternBreakpoint;
     sink = (void *)mlirDebuggerAddFileLineColLocBreakpoint;
+    sink = (void *)mlirDebuggerDeleteBreakpoint;
     return true;
   }();
   (void)initialized;
