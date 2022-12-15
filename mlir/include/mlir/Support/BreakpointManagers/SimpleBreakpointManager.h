@@ -15,6 +15,7 @@
 
 #include "mlir/Support/BreakpointManagers/BreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
+#include "mlir/Support/DebugExecutionContext.h"
 #include "llvm/ADT/MapVector.h"
 
 namespace mlir {
@@ -64,6 +65,11 @@ public:
     auto &it = result.first;
     if (result.second) {
       it->second = std::make_unique<SimpleBreakpoint>(tag.str());
+      SimpleBreakpoint *justAddedBreakpoint = it->second.get();
+      auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+      mp.insert({justAddedBreakpoint->getBreakpointID(),
+                 std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>(
+                     justAddedBreakpoint, *this)});
     }
     return it->second.get();
   }

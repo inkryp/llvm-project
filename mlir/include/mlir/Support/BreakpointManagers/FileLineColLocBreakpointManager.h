@@ -16,6 +16,7 @@
 #include "mlir/IR/Location.h"
 #include "mlir/Support/BreakpointManagers/BreakpointManager.h"
 #include "mlir/Support/DebugAction.h"
+#include "mlir/Support/DebugExecutionContext.h"
 #include "llvm/ADT/DenseMap.h"
 #include <variant>
 
@@ -95,6 +96,11 @@ public:
     if (result.second) {
       it->second =
           std::make_unique<FileLineColLocBreakpoint>(file.str(), line, col);
+      FileLineColLocBreakpoint *justAddedBreakpoint = it->second.get();
+      auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+      mp.insert({justAddedBreakpoint->getBreakpointID(),
+                 std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>(
+                     justAddedBreakpoint, *this)});
     }
     return it->second.get();
   }

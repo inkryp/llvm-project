@@ -21,6 +21,10 @@
 extern llvm::SmallVector<mlir::BreakpointManager *> &
 getGlobalInstancesOfBreakpointManagers();
 
+extern llvm::DenseMap<
+    unsigned, std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>> &
+getGlobalInstanceOfBreakpoindIdsMap();
+
 namespace mlir {
 
 enum DebugExecutionControl {
