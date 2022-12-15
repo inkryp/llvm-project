@@ -25,15 +25,18 @@ public:
 
   /// Return the unique breakpoint id of this breakpoint, use for casting
   /// functionality.
-  TypeID getBreakpointID() const { return breakpointID; }
+  TypeID getBreakpointTypeID() const { return breakpointTypeID; }
+
+  unsigned getBreakpointID() { return breakpointID; }
 
 protected:
-  Breakpoint(TypeID breakpointID)
-      : breakpointID(breakpointID), enableStatus(true) {}
+  Breakpoint(TypeID breakpointTypeID)
+      : breakpointTypeID(breakpointTypeID), enableStatus(true),
+        breakpointID(++breakpointCounterID) {}
 
   /// The type of the derived breakpoint class. This allows for detecting the
   /// specific handler of a given breakpoint type.
-  TypeID breakpointID;
+  TypeID breakpointTypeID;
 
   bool getEnableStatus() const { return enableStatus; }
 
@@ -45,6 +48,10 @@ private:
   /// The current state of the breakpoint. A breakpoint can be either enabled
   /// or disabled.
   bool enableStatus;
+
+  unsigned breakpointID;
+
+  static inline unsigned breakpointCounterID{0};
 
   /// Allow access to `enableStatus` operations.
   friend class BreakpointManager;

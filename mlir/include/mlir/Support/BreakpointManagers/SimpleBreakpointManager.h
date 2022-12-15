@@ -28,7 +28,7 @@ public:
 
   /// Provide classof to allow casting between breakpoint types.
   static bool classof(const Breakpoint *breakpoint) {
-    return breakpoint->getBreakpointID() == TypeID::get<SimpleBreakpoint>();
+    return breakpoint->getBreakpointTypeID() == TypeID::get<SimpleBreakpoint>();
   }
 
 private:

@@ -32,7 +32,7 @@ public:
 
   /// Provide classof to allow casting between breakpoint types.
   static bool classof(const Breakpoint *breakpoint) {
-    return breakpoint->getBreakpointID() ==
+    return breakpoint->getBreakpointTypeID() ==
            TypeID::get<FileLineColLocBreakpoint>();
   }
 
