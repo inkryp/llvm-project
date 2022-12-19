@@ -56,6 +56,26 @@ bool mlirDebuggerDeleteBreakpoint(unsigned breakpointID) {
 
 namespace mlir {
 
+GdbDebugExecutionContextInformation &
+GdbDebugExecutionContextInformation::getGlobalInstance() {
+  static GdbDebugExecutionContextInformation *ctx =
+      new GdbDebugExecutionContextInformation();
+  return *ctx;
+}
+
+void GdbDebugExecutionContextInformation::updateContents(
+    ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags, StringRef tag,
+    StringRef desc, const int &depth, const DebugActionInformation *daiHead) {
+  this->units = units;
+  this->instanceTags = instanceTags;
+  this->tag = tag;
+  this->desc = desc;
+  this->depth = depth;
+  this->daiHead = daiHead;
+  idxActiveUnit = 0;
+  activeUnit = this->units[idxActiveUnit];
+}
+
 static void *volatile sink;
 
 DebugExecutionControl
@@ -71,6 +91,8 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     return true;
   }();
   (void)initialized;
+  auto &ctx = GdbDebugExecutionContextInformation::getGlobalInstance();
+  ctx.updateContents(units, instanceTags, tag, desc, depth, daiHead);
   raise(SIGTRAP);
   return GDB_RETURN;
 }

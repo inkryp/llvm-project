@@ -33,6 +33,23 @@ bool mlirDebuggerDeleteBreakpoint(unsigned id);
 
 namespace mlir {
 
+class GdbDebugExecutionContextInformation {
+public:
+  static GdbDebugExecutionContextInformation &getGlobalInstance();
+  void updateContents(ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef,
+                      StringRef, const int &, const DebugActionInformation *);
+
+private:
+  ArrayRef<IRUnit> units;
+  ArrayRef<StringRef> instanceTags;
+  StringRef tag;
+  StringRef desc;
+  int depth;
+  const DebugActionInformation *daiHead;
+  int idxActiveUnit;
+  IRUnit activeUnit;
+};
+
 DebugExecutionControl
 GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
                     StringRef something, StringRef other, const int &depth,
