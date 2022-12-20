@@ -70,3 +70,11 @@ define mlir deleteBreakpoint
     end
   end
 end
+
+define mlir listBreakpoints
+  set $mlirDebuggerListBreakpointsResult = \
+      ((_Bool (*)())mlirDebuggerListBreakpoints)()
+  if !$mlirDebuggerListBreakpointsResult
+    printf "No breakpoints.\n"
+  end
+end

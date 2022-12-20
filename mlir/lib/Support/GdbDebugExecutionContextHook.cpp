@@ -11,6 +11,9 @@
 #include "mlir/Support/BreakpointManagers/RewritePatternBreakpointManager.h"
 #include "mlir/Support/BreakpointManagers/SimpleBreakpointManager.h"
 #include "mlir/Support/DebugExecutionContext.h"
+#include "llvm/Support/Casting.h"
+#include "llvm/Support/Debug.h"
+#include "llvm/Support/FormatVariadic.h"
 #include <signal.h>
 
 mlir::DebugExecutionControl GDB_RETURN = mlir::DebugExecutionControl::Apply;
@@ -52,6 +55,35 @@ bool mlirDebuggerDeleteBreakpoint(unsigned breakpointID) {
   }
   return false;
 }
+
+bool mlirDebuggerListBreakpoints() {
+  auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+  if (mp.empty()) {
+    return false;
+  }
+  llvm::dbgs() << llvm::formatv("{0,-8}", "ID")
+               << llvm::formatv("{0,-15}", "Type")
+               << llvm::formatv("{0,-4}", "Enb") << "Info\n";
+  for (auto &[id, tuple] : mp) {
+    auto *breakpoint = std::get<0>(tuple);
+    std::string type;
+    if (llvm::isa<mlir::SimpleBreakpoint>(*breakpoint)) {
+      type = "Tag";
+    } else if (llvm::isa<mlir::RewritePatternBreakpoint>(*breakpoint)) {
+      type = "Pattern";
+    } else if (llvm::isa<mlir::FileLineColLocBreakpoint>(*breakpoint)) {
+      type = "Location";
+    } else {
+      type = "Unknown";
+    }
+    llvm::dbgs() << llvm::formatv("{0,-8}", id)
+                 << llvm::formatv("{0,-15}", type)
+                 << llvm::formatv("{0,-4}",
+                                  breakpoint->getEnableStatus() ? 'y' : 'n')
+                 << *breakpoint << '\n';
+  }
+  return true;
+}
 }
 
 namespace mlir {
@@ -88,6 +120,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerAddRewritePatternBreakpoint;
     sink = (void *)mlirDebuggerAddFileLineColLocBreakpoint;
     sink = (void *)mlirDebuggerDeleteBreakpoint;
+    sink = (void *)mlirDebuggerListBreakpoints;
     return true;
   }();
   (void)initialized;

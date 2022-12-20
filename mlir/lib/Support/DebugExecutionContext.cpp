@@ -20,10 +20,10 @@ getGlobalInstancesOfBreakpointManagers() {
   return breakpointManagers;
 }
 
-llvm::DenseMap<unsigned,
-               std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>> &
+llvm::MapVector<unsigned,
+                std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>> &
 getGlobalInstanceOfBreakpoindIdsMap() {
-  static llvm::DenseMap<
+  static llvm::MapVector<
       unsigned, std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>>
       mp;
   return mp;

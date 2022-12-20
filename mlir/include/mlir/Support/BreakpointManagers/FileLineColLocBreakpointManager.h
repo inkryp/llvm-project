@@ -37,6 +37,10 @@ public:
            TypeID::get<FileLineColLocBreakpoint>();
   }
 
+  void print(raw_ostream &os) const override {
+    os << "Location: " << file << ':' << line << ':' << col;
+  }
+
 private:
   /// A FileLineColLoc information associate the FileLineColLocBreakpoint with.
   // TODO: I already started with this, but should be changed to be a simple

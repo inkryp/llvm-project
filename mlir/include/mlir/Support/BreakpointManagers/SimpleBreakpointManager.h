@@ -32,6 +32,8 @@ public:
     return breakpoint->getBreakpointTypeID() == TypeID::get<SimpleBreakpoint>();
   }
 
+  void print(raw_ostream &os) const override { os << "Tag: `" << tag << '`'; }
+
 private:
   /// A tag to associate the SimpleBreakpoint with.
   std::string tag;

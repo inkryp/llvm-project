@@ -29,6 +29,10 @@ public:
 
   unsigned getBreakpointID() { return breakpointID; }
 
+  bool getEnableStatus() const { return enableStatus; }
+
+  virtual void print(raw_ostream &os) const = 0;
+
 protected:
   Breakpoint(TypeID breakpointTypeID)
       : breakpointTypeID(breakpointTypeID), enableStatus(true),
@@ -37,8 +41,6 @@ protected:
   /// The type of the derived breakpoint class. This allows for detecting the
   /// specific handler of a given breakpoint type.
   TypeID breakpointTypeID;
-
-  bool getEnableStatus() const { return enableStatus; }
 
   void setEnableStatusTrue() { enableStatus = true; }
 
@@ -56,6 +58,11 @@ private:
   /// Allow access to `enableStatus` operations.
   friend class BreakpointManager;
 };
+
+inline raw_ostream &operator<<(raw_ostream &os, const Breakpoint &breakpoint) {
+  const_cast<Breakpoint &>(breakpoint).print(os);
+  return os;
+}
 
 /// This class represents the base class of a breakpoint manager.
 class BreakpointManager {

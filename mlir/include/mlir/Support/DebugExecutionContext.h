@@ -21,7 +21,7 @@
 extern llvm::SmallVector<mlir::BreakpointManager *> &
 getGlobalInstancesOfBreakpointManagers();
 
-extern llvm::DenseMap<
+extern llvm::MapVector<
     unsigned, std::tuple<mlir::Breakpoint *, mlir::BreakpointManager &>> &
 getGlobalInstanceOfBreakpoindIdsMap();
 

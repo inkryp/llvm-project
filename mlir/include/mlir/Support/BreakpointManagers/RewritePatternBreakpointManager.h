@@ -36,6 +36,10 @@ public:
            TypeID::get<RewritePatternBreakpoint>();
   }
 
+  void print(raw_ostream &os) const override {
+    os << "Pattern/Debug Label: `" << patternNameInfo << '`';
+  }
+
 private:
   /// A tag to associate the RewritePatternBreakpoint with.
   std::string patternNameInfo;
