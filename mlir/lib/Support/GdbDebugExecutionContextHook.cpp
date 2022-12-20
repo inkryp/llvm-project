@@ -99,6 +99,16 @@ bool mlirDebuggerListBreakpoints() {
   }
   return true;
 }
+
+bool mlirDebuggerPrintAction() {
+  if (auto *daiHead =
+          mlir::GdbDebugExecutionContextInformation::getGlobalInstance()
+              .getDebugActionInformation()) {
+    daiHead->action.print(llvm::dbgs());
+    return true;
+  }
+  return false;
+}
 }
 
 namespace mlir {
@@ -137,6 +147,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerDeleteBreakpoint;
     sink = (void *)mlirDebuggerChangeStatusOfBreakpoint;
     sink = (void *)mlirDebuggerListBreakpoints;
+    sink = (void *)mlirDebuggerPrintAction;
     return true;
   }();
   (void)initialized;

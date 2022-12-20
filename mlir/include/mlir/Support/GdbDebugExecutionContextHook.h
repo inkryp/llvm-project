@@ -33,6 +33,8 @@ bool mlirDebuggerDeleteBreakpoint(unsigned id);
 bool mlirDebuggerChangeStatusOfBreakpoint(unsigned breakpointID, bool status);
 
 bool mlirDebuggerListBreakpoints();
+
+bool mlirDebuggerPrintAction();
 }
 
 namespace mlir {
@@ -42,6 +44,7 @@ public:
   static GdbDebugExecutionContextInformation &getGlobalInstance();
   void updateContents(ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef,
                       StringRef, const int &, const DebugActionInformation *);
+  const DebugActionInformation *getDebugActionInformation() { return daiHead; }
 
 private:
   ArrayRef<IRUnit> units;

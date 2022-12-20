@@ -100,3 +100,10 @@ define mlir listBreakpoints
     printf "No breakpoints.\n"
   end
 end
+
+define mlir print-action
+  set $mlirDebuggerPrintAction = ((_Bool (*)())mlirDebuggerPrintAction)()
+  if !$mlirDebuggerPrintAction
+    printf "No action has been selected\n"
+  end
+end
