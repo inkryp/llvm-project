@@ -31,6 +31,10 @@ public:
 
   bool getEnableStatus() const { return enableStatus; }
 
+  void setEnableStatusTrue() { enableStatus = true; }
+
+  void setEnableStatusFalse() { enableStatus = false; }
+
   virtual void print(raw_ostream &os) const = 0;
 
 protected:
@@ -41,10 +45,6 @@ protected:
   /// The type of the derived breakpoint class. This allows for detecting the
   /// specific handler of a given breakpoint type.
   TypeID breakpointTypeID;
-
-  void setEnableStatusTrue() { enableStatus = true; }
-
-  void setEnableStatusFalse() { enableStatus = false; }
 
 private:
   /// The current state of the breakpoint. A breakpoint can be either enabled

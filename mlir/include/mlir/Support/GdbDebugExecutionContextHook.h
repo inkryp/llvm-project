@@ -30,6 +30,8 @@ void mlirDebuggerAddFileLineColLocBreakpoint(const char *file, unsigned line,
 /// When deleting is agnostic of the specific type of `Breakpoint`.
 bool mlirDebuggerDeleteBreakpoint(unsigned id);
 
+bool mlirDebuggerChangeStatusOfBreakpoint(unsigned breakpointID, bool status);
+
 bool mlirDebuggerListBreakpoints();
 }
 

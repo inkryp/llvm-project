@@ -56,6 +56,21 @@ bool mlirDebuggerDeleteBreakpoint(unsigned breakpointID) {
   return false;
 }
 
+bool mlirDebuggerChangeStatusOfBreakpoint(unsigned breakpointID, bool status) {
+  auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
+  auto it = mp.find(breakpointID);
+  if (it != mp.end()) {
+    auto *breakpoint = std::get<0>(it->second);
+    if (status) {
+      breakpoint->setEnableStatusTrue();
+    } else {
+      breakpoint->setEnableStatusFalse();
+    }
+    return true;
+  }
+  return false;
+}
+
 bool mlirDebuggerListBreakpoints() {
   auto &mp = getGlobalInstanceOfBreakpoindIdsMap();
   if (mp.empty()) {
@@ -120,6 +135,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerAddRewritePatternBreakpoint;
     sink = (void *)mlirDebuggerAddFileLineColLocBreakpoint;
     sink = (void *)mlirDebuggerDeleteBreakpoint;
+    sink = (void *)mlirDebuggerChangeStatusOfBreakpoint;
     sink = (void *)mlirDebuggerListBreakpoints;
     return true;
   }();

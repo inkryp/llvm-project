@@ -71,6 +71,28 @@ define mlir deleteBreakpoint
   end
 end
 
+define mlir disable
+  if $argc == 1
+    set $mlirDebuggerChangeStatusOfBreakpointResult = \
+        ((_Bool(*)(unsigned, _Bool))mlirDebuggerChangeStatusOfBreakpoint)( \
+            $arg0, 0)
+    if !$mlirDebuggerChangeStatusOfBreakpointResult
+      printf "Could not find Breakpoint with ID %d\n", $arg0
+    end
+  end
+end
+
+define mlir enable
+  if $argc == 1
+    set $mlirDebuggerChangeStatusOfBreakpointResult = \
+        ((_Bool(*)(unsigned, _Bool))mlirDebuggerChangeStatusOfBreakpoint)( \
+            $arg0, 1)
+    if !$mlirDebuggerChangeStatusOfBreakpointResult
+      printf "Could not find Breakpoint with ID %d\n", $arg0
+    end
+  end
+end
+
 define mlir listBreakpoints
   set $mlirDebuggerListBreakpointsResult = \
       ((_Bool (*)())mlirDebuggerListBreakpoints)()
