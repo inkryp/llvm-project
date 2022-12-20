@@ -10,8 +10,27 @@
 
 #include "mlir/Pass/Pass.h"
 #include "mlir/Pass/PassManager.h"
+#include "mlir/Support/DebugAction.h"
 
 namespace mlir {
+
+struct PassExecutionAction
+    : public DebugAction<PassExecutionAction, const Pass &> {
+  const Pass &pass;
+  PassExecutionAction(const Pass &pass) : pass(pass) {}
+  static StringRef getTag() { return "pass-execution-action"; }
+  static StringRef getDescription() {
+    return "Encapsulate the execution of individual passes";
+  }
+  // TODO(inkryp): What else is possible to be retrieved at this point?
+  void print(raw_ostream &os) const override {
+    os << "In action `" << tag << "`\n"
+       << desc << '\n'
+       << "Executing pass: " << pass.getName() << " on Operation "
+       << pass.getOpName() << '\n';
+  }
+};
+
 namespace detail {
 
 //===----------------------------------------------------------------------===//

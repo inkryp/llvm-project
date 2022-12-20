@@ -458,50 +458,59 @@ LogicalResult OpToOpPassAdaptor::run(Pass *pass, Operation *op,
   if (pi)
     pi->runBeforePass(pass, op);
 
+  LogicalResult result = failure();
+  auto &manager = op->getContext()->getDebugActionManager();
   // Invoke the virtual runOnOperation method.
-  if (auto *adaptor = dyn_cast<OpToOpPassAdaptor>(pass))
-    adaptor->runOnOperation(verifyPasses);
-  else
-    pass->runOnOperation();
-  bool passFailed = pass->passState->irAndPassFailed.getInt();
+  (void)manager.execute<PassExecutionAction>(
+      {op}, pass->getName(),
+      [&]() -> ActionResult {
+        if (auto *adaptor = dyn_cast<OpToOpPassAdaptor>(pass))
+          adaptor->runOnOperation(verifyPasses);
+        else
+          pass->runOnOperation();
+        bool passFailed = pass->passState->irAndPassFailed.getInt();
 
-  // Invalidate any non preserved analyses.
-  am.invalidate(pass->passState->preservedAnalyses);
+        // Invalidate any non preserved analyses.
+        am.invalidate(pass->passState->preservedAnalyses);
 
-  // When verifyPasses is specified, we run the verifier (unless the pass
-  // failed).
-  if (!passFailed && verifyPasses) {
-    bool runVerifierNow = true;
+        // When verifyPasses is specified, we run the verifier (unless the pass
+        // failed).
+        if (!passFailed && verifyPasses) {
+          bool runVerifierNow = true;
 
-    // If the pass is an adaptor pass, we don't run the verifier recursively
-    // because the nested operations should have already been verified after
-    // nested passes had run.
-    bool runVerifierRecursively = !isa<OpToOpPassAdaptor>(pass);
+          // If the pass is an adaptor pass, we don't run the verifier
+          // recursively because the nested operations should have already been
+          // verified after nested passes had run.
+          bool runVerifierRecursively = !isa<OpToOpPassAdaptor>(pass);
 
-    // Reduce compile time by avoiding running the verifier if the pass didn't
-    // change the IR since the last time the verifier was run:
-    //
-    //  1) If the pass said that it preserved all analyses then it can't have
-    //     permuted the IR.
-    //
-    // We run these checks in EXPENSIVE_CHECKS mode out of caution.
+      // Reduce compile time by avoiding running the verifier if the pass didn't
+      // change the IR since the last time the verifier was run:
+      //
+      //  1) If the pass said that it preserved all analyses then it can't have
+      //     permuted the IR.
+      //
+      // We run these checks in EXPENSIVE_CHECKS mode out of caution.
 #ifndef EXPENSIVE_CHECKS
-    runVerifierNow = !pass->passState->preservedAnalyses.isAll();
+          runVerifierNow = !pass->passState->preservedAnalyses.isAll();
 #endif
-    if (runVerifierNow)
-      passFailed = failed(verify(op, runVerifierRecursively));
-  }
+          if (runVerifierNow)
+            passFailed = failed(verify(op, runVerifierRecursively));
+        }
 
-  // Instrument after the pass has run.
-  if (pi) {
-    if (passFailed)
-      pi->runAfterPassFailed(pass, op);
-    else
-      pi->runAfterPass(pass, op);
-  }
+        // Instrument after the pass has run.
+        if (pi) {
+          if (passFailed)
+            pi->runAfterPassFailed(pass, op);
+          else
+            pi->runAfterPass(pass, op);
+        }
+        result = failure(passFailed);
+        return {op, /*changed=*/true, failure(passFailed)};
+      },
+      *pass);
 
   // Return if the pass signaled a failure.
-  return failure(passFailed);
+  return result;
 }
 
 /// Run the given operation and analysis manager on a provided op pass manager.
