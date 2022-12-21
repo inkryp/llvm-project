@@ -131,6 +131,18 @@ define mlir print
   end
 end
 
+define mlir select
+  if $argc == 1
+    if ((_Bool (*)(unsigned))mlirDebuggerIRUnitIndexIsAvailable)($arg0)
+      set $mlirDebuggerCurrentlyActivatedIRUnit = \
+              ((void *(*)(unsigned))mlirDebuggerRetrieveIRUnit)($arg0)
+    else
+      printf "Currently there is no available IRUnit with that ID. "
+      printf "Active unit remains the same.\n"
+    end
+  end
+end
+
 define hook-continue
   set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 end

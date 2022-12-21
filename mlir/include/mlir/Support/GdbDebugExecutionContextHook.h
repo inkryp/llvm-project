@@ -41,6 +41,8 @@ void mlirDebuggerPrintIRUnit(const void *);
 bool mlirDebuggerShowContext();
 
 const void *mlirDebuggerRetrieveIRUnit(unsigned);
+
+bool mlirDebuggerIRUnitIndexIsAvailable(unsigned);
 }
 
 namespace mlir {
