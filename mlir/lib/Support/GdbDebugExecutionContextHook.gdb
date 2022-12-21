@@ -2,6 +2,14 @@ define-prefix mlir
 
 set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 
+define mlirDebuggerInitializeCurrentlyActivatedIRUnit
+  set $mlirDebuggerCurrentlyActivatedIRUnit = \
+          ((void *(*)(unsigned))mlirDebuggerRetrieveIRUnit)(0)
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    printf "Currently there is no available IRUnit with that ID.\n"
+  end
+end
+
 define mlir apply
   call ((void (*)(int))mlirDebuggerSetControl)(1)
   continue
@@ -119,11 +127,7 @@ end
 
 define mlir print
   if !$mlirDebuggerCurrentlyActivatedIRUnit
-    set $mlirDebuggerCurrentlyActivatedIRUnit = \
-            ((void *(*)(unsigned))mlirDebuggerRetrieveIRUnit)(0)
-    if !$mlirDebuggerCurrentlyActivatedIRUnit
-      printf "Currently there is no available IRUnit with that ID.\n"
-    end
+    mlirDebuggerInitializeCurrentlyActivatedIRUnit
   end
   if $mlirDebuggerCurrentlyActivatedIRUnit
     call ((void (*)(const void *))mlirDebuggerPrintIRUnit)( \
@@ -140,6 +144,19 @@ define mlir select
       printf "Currently there is no available IRUnit with that ID. "
       printf "Active unit remains the same.\n"
     end
+  end
+end
+
+define mlir select-parent
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    mlirDebuggerInitializeCurrentlyActivatedIRUnit
+  end
+  if $mlirDebuggerCurrentlyActivatedIRUnit
+    set $mlirDebuggerCurrentlyActivatedIRUnit = \
+            ((void *(*)(void *))mlirDebuggerSelectParentIRUnit)( \
+                $mlirDebuggerCurrentlyActivatedIRUnit)
+  else
+    printf "No IRUnit is activated right now.\n"
   end
 end
 
