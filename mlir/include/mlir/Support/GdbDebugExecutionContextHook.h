@@ -45,6 +45,8 @@ const void *mlirDebuggerRetrieveIRUnit(unsigned);
 bool mlirDebuggerIRUnitIndexIsAvailable(unsigned);
 
 void *mlirDebuggerSelectParentIRUnit(void *);
+
+void *mlirDebuggerSelectChildIRUnit(void *);
 }
 
 namespace mlir {

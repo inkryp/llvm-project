@@ -160,6 +160,20 @@ define mlir select-parent
   end
 end
 
+# TODO(inkryp): Is it worth it to retrieve #id child?
+define mlir select-child
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    mlirDebuggerInitializeCurrentlyActivatedIRUnit
+  end
+  if $mlirDebuggerCurrentlyActivatedIRUnit
+    set $mlirDebuggerCurrentlyActivatedIRUnit = \
+            ((void *(*)(void *))mlirDebuggerSelectChildIRUnit)( \
+                $mlirDebuggerCurrentlyActivatedIRUnit)
+  else
+    printf "No IRUnit is activated right now.\n"
+  end
+end
+
 define hook-continue
   set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 end
