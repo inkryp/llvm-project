@@ -35,6 +35,10 @@ bool mlirDebuggerChangeStatusOfBreakpoint(unsigned breakpointID, bool status);
 bool mlirDebuggerListBreakpoints();
 
 bool mlirDebuggerPrintAction();
+
+void mlirDebuggerPrintIRUnit(const void *);
+
+bool mlirDebuggerShowContext();
 }
 
 namespace mlir {
@@ -45,6 +49,7 @@ public:
   void updateContents(ArrayRef<IRUnit>, ArrayRef<StringRef>, StringRef,
                       StringRef, const int &, const DebugActionInformation *);
   const DebugActionInformation *getDebugActionInformation() { return daiHead; }
+  const ArrayRef<IRUnit> &getArrayOfIRUnits() { return units; }
 
 private:
   ArrayRef<IRUnit> units;

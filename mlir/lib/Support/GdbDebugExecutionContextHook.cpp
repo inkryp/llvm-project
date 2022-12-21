@@ -109,6 +109,66 @@ bool mlirDebuggerPrintAction() {
   }
   return false;
 }
+
+void mlirDebuggerPrintIRUnit(const void *irUnitPtr) {
+  static int indent = 3;
+  static auto printIndent = []() -> llvm::raw_ostream & {
+    for (int i = 0; i < indent; ++i) {
+      llvm::dbgs() << "  ";
+    }
+    return llvm::dbgs();
+  };
+  static auto printBlock = [](mlir::Block *block) {
+    printIndent() << "Block with " << block->getNumArguments() << " arguments, "
+                  << block->getNumSuccessors() << " successors, and "
+                  << block->getOperations().size() << " operations\n";
+    ++indent;
+    for (auto &op : block->getOperations()) {
+      printIndent() << op << '\n';
+    }
+    --indent;
+  };
+  static auto printRegion = [](mlir::Region *region) {
+    printIndent() << "Region with " << region->getBlocks().size()
+                  << " blocks:\n";
+    ++indent;
+    for (auto &block : region->getBlocks()) {
+      printBlock(&block);
+    }
+    --indent;
+  };
+  auto &unit = *reinterpret_cast<const mlir::IRUnit *>(irUnitPtr);
+  if (std::holds_alternative<mlir::Operation *>(unit)) {
+    auto *op = std::get<mlir::Operation *>(unit);
+    llvm::dbgs() << "Operation:\n";
+    printIndent() << *op << '\n';
+  } else if (std::holds_alternative<mlir::Block *>(unit)) {
+    auto *block = std::get<mlir::Block *>(unit);
+    llvm::dbgs() << "Block:\n";
+    printBlock(block);
+  } else if (std::holds_alternative<mlir::Region *>(unit)) {
+    auto *region = std::get<mlir::Region *>(unit);
+    llvm::dbgs() << "Region:\n";
+    printRegion(region);
+  } else {
+    llvm::dbgs() << "Invalid pointer to IRUnit.\n";
+  }
+}
+
+bool mlirDebuggerShowContext() {
+  auto &units = mlir::GdbDebugExecutionContextInformation::getGlobalInstance()
+                    .getArrayOfIRUnits();
+  if (units.empty()) {
+    return false;
+  }
+  llvm::dbgs() << "Available IRUnits: " << units.size() << '\n';
+  for (int i = 0; i < (int)units.size(); ++i) {
+    auto &unit = units[i];
+    llvm::dbgs() << llvm::formatv("#{0,3}: ", i);
+    mlirDebuggerPrintIRUnit(&unit);
+  }
+  return true;
+}
 }
 
 namespace mlir {
@@ -148,6 +208,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerChangeStatusOfBreakpoint;
     sink = (void *)mlirDebuggerListBreakpoints;
     sink = (void *)mlirDebuggerPrintAction;
+    sink = (void *)mlirDebuggerShowContext;
     return true;
   }();
   (void)initialized;

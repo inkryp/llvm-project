@@ -107,3 +107,10 @@ define mlir print-action
     printf "No action has been selected\n"
   end
 end
+
+define mlir show-context
+  set $mlirDebuggerShowContextResult = ((_Bool (*)())mlirDebuggerShowContext)()
+  if !$mlirDebuggerShowContextResult
+    printf "Currently there are no available IRUnits.\n"
+  end
+end
