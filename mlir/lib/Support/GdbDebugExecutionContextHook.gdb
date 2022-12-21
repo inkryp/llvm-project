@@ -1,5 +1,7 @@
 define-prefix mlir
 
+set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
+
 define mlir apply
   call ((void (*)(int))mlirDebuggerSetControl)(1)
   continue
@@ -113,4 +115,22 @@ define mlir show-context
   if !$mlirDebuggerShowContextResult
     printf "Currently there are no available IRUnits.\n"
   end
+end
+
+define mlir print
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    set $mlirDebuggerCurrentlyActivatedIRUnit = \
+            ((void *(*)(unsigned))mlirDebuggerRetrieveIRUnit)(0)
+    if !$mlirDebuggerCurrentlyActivatedIRUnit
+      printf "Currently there is no available IRUnit with that ID.\n"
+    end
+  end
+  if $mlirDebuggerCurrentlyActivatedIRUnit
+    call ((void (*)(const void *))mlirDebuggerPrintIRUnit)( \
+        $mlirDebuggerCurrentlyActivatedIRUnit)
+  end
+end
+
+define hook-continue
+  set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 end

@@ -169,6 +169,15 @@ bool mlirDebuggerShowContext() {
   }
   return true;
 }
+
+const void *mlirDebuggerRetrieveIRUnit(unsigned id) {
+  auto &units = mlir::GdbDebugExecutionContextInformation::getGlobalInstance()
+                    .getArrayOfIRUnits();
+  if (units.empty() || id >= units.size()) {
+    return NULL;
+  }
+  return &units[id];
+}
 }
 
 namespace mlir {
@@ -208,7 +217,9 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerChangeStatusOfBreakpoint;
     sink = (void *)mlirDebuggerListBreakpoints;
     sink = (void *)mlirDebuggerPrintAction;
+    sink = (void *)mlirDebuggerPrintIRUnit;
     sink = (void *)mlirDebuggerShowContext;
+    sink = (void *)mlirDebuggerRetrieveIRUnit;
     return true;
   }();
   (void)initialized;
