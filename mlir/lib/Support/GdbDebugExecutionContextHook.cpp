@@ -110,6 +110,22 @@ bool mlirDebuggerPrintAction() {
   return false;
 }
 
+bool mlirDebuggerPrintActionBacktrace() {
+  if (auto *daiHead =
+          mlir::GdbDebugExecutionContextInformation::getGlobalInstance()
+              .getDebugActionInformation()) {
+    const mlir::DebugActionInformation *traverse = daiHead;
+    int count = 0;
+    while (traverse) {
+      llvm::dbgs() << llvm::formatv("#{0,3}: ", count++);
+      traverse->action.print(llvm::dbgs());
+      traverse = traverse->prev;
+    }
+    return true;
+  }
+  return false;
+}
+
 void mlirDebuggerPrintIRUnit(const void *irUnitPtr) {
   static int indent = 3;
   static auto printIndent = []() -> llvm::raw_ostream & {
@@ -274,6 +290,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerChangeStatusOfBreakpoint;
     sink = (void *)mlirDebuggerListBreakpoints;
     sink = (void *)mlirDebuggerPrintAction;
+    sink = (void *)mlirDebuggerPrintActionBacktrace;
     sink = (void *)mlirDebuggerPrintIRUnit;
     sink = (void *)mlirDebuggerShowContext;
     sink = (void *)mlirDebuggerRetrieveIRUnit;

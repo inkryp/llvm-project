@@ -118,6 +118,14 @@ define mlir print-action
   end
 end
 
+define mlir action-backtrace
+  set $mlirDebuggerPrintActionBacktraceResult = \
+          ((_Bool(*)())mlirDebuggerPrintActionBacktrace)()
+  if !$mlirDebuggerPrintActionBacktraceResult
+    printf "No action has been selected\n"
+  end
+end
+
 define mlir show-context
   set $mlirDebuggerShowContextResult = ((_Bool (*)())mlirDebuggerShowContext)()
   if !$mlirDebuggerShowContextResult

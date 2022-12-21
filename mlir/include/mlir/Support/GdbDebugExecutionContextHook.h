@@ -36,6 +36,8 @@ bool mlirDebuggerListBreakpoints();
 
 bool mlirDebuggerPrintAction();
 
+bool mlirDebuggerPrintActionBacktrace();
+
 void mlirDebuggerPrintIRUnit(const void *);
 
 bool mlirDebuggerShowContext();
