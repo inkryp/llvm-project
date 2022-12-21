@@ -51,6 +51,8 @@ void *mlirDebuggerSelectParentIRUnit(void *);
 void *mlirDebuggerSelectChildIRUnit(void *);
 
 void *mlirDebuggerPreviousOperation(void *);
+
+void *mlirDebuggerNextOperation(void *);
 }
 
 namespace mlir {

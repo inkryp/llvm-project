@@ -195,6 +195,19 @@ define mlir prev-operation
   end
 end
 
+define mlir next-operation
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    mlirDebuggerInitializeCurrentlyActivatedIRUnit
+  end
+  if $mlirDebuggerCurrentlyActivatedIRUnit
+    set $mlirDebuggerCurrentlyActivatedIRUnit = \
+            ((void *(*)(void *))mlirDebuggerNextOperation)( \
+                $mlirDebuggerCurrentlyActivatedIRUnit)
+  else
+    printf "No IRUnit is activated right now.\n"
+  end
+end
+
 define hook-continue
   set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 end
