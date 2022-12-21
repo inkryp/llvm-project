@@ -47,6 +47,8 @@ bool mlirDebuggerIRUnitIndexIsAvailable(unsigned);
 void *mlirDebuggerSelectParentIRUnit(void *);
 
 void *mlirDebuggerSelectChildIRUnit(void *);
+
+void *mlirDebuggerPreviousOperation(void *);
 }
 
 namespace mlir {

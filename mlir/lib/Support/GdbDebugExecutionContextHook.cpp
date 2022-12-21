@@ -219,6 +219,22 @@ void *mlirDebuggerSelectChildIRUnit(void *irUnitPtr) {
   }
   return NULL;
 }
+
+// TODO(inkryp): Make this safe. Study behavior of when reaching Module Op.
+void *mlirDebuggerPreviousOperation(void *irUnitPtr) {
+  auto &unit = *reinterpret_cast<const mlir::IRUnit *>(irUnitPtr);
+  if (std::holds_alternative<mlir::Operation *>(unit)) {
+    auto *op = std::get<mlir::Operation *>(unit);
+    return new mlir::IRUnit(op->getParentOp());
+  } else if (std::holds_alternative<mlir::Block *>(unit)) {
+    auto *block = std::get<mlir::Block *>(unit);
+    return new mlir::IRUnit(block->getParentOp());
+  } else if (std::holds_alternative<mlir::Region *>(unit)) {
+    auto *region = std::get<mlir::Region *>(unit);
+    return new mlir::IRUnit(region->getParentOp());
+  }
+  return NULL;
+}
 }
 
 namespace mlir {
@@ -264,6 +280,7 @@ GdbCallBackFunction(ArrayRef<IRUnit> units, ArrayRef<StringRef> instanceTags,
     sink = (void *)mlirDebuggerIRUnitIndexIsAvailable;
     sink = (void *)mlirDebuggerSelectParentIRUnit;
     sink = (void *)mlirDebuggerSelectChildIRUnit;
+    sink = (void *)mlirDebuggerPreviousOperation;
     return true;
   }();
   (void)initialized;

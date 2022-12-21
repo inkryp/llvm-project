@@ -174,6 +174,19 @@ define mlir select-child
   end
 end
 
+define mlir prev-operation
+  if !$mlirDebuggerCurrentlyActivatedIRUnit
+    mlirDebuggerInitializeCurrentlyActivatedIRUnit
+  end
+  if $mlirDebuggerCurrentlyActivatedIRUnit
+    set $mlirDebuggerCurrentlyActivatedIRUnit = \
+            ((void *(*)(void *))mlirDebuggerPreviousOperation)( \
+                $mlirDebuggerCurrentlyActivatedIRUnit)
+  else
+    printf "No IRUnit is activated right now.\n"
+  end
+end
+
 define hook-continue
   set $mlirDebuggerCurrentlyActivatedIRUnit = ((void *) 0)
 end
